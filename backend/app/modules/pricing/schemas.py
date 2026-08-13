@@ -34,3 +34,7 @@ class PriceAnalysisResponse(BaseModel):
     current: ElectricityPriceResponse | None
     cheapest: ElectricityPriceResponse | None
     most_expensive: ElectricityPriceResponse | None
+    # 28.25: only meaningful for "current" — cheapest/most_expensive are
+    # historical lookups, not something that goes stale.
+    current_age_minutes: float | None = None
+    current_is_stale: bool | None = None

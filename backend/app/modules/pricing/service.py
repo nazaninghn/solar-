@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.freshness import compute_freshness
 from app.models.electricity_price import ElectricityPrice
 
 
@@ -55,16 +56,22 @@ def get_price_analysis(db: Session, factory_id: int) -> dict:
             "current": None,
             "cheapest": None,
             "most_expensive": None,
+            "current_age_minutes": None,
+            "current_is_stale": None,
         }
 
     cheapest = min(prices, key=lambda x: x.buy_price_per_kwh)
     most_expensive = max(prices, key=lambda x: x.buy_price_per_kwh)
     current = prices[-1]
 
+    freshness = compute_freshness(current.timestamp)
+
     return {
         "current": current,
         "cheapest": cheapest,
         "most_expensive": most_expensive,
+        "current_age_minutes": freshness["age_minutes"],
+        "current_is_stale": freshness["is_stale"],
     }
 
 

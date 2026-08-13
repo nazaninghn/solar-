@@ -2,16 +2,34 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
+from app.core.external_api_metrics import get_external_api_snapshot
+from app.core.metrics import get_request_metrics_snapshot
 from app.database.session import get_db
 from app.devices.scenario import VALID_SCENARIOS, get_scenario, set_scenario
 from app.models.user import User
 from app.modules.system.schemas import (
+    ApiHealthStatus,
+    DatabaseHealthStatus,
+    DatabasePoolStats,
+    DeviceHealthStatus,
+    DeviceStatusCounts,
+    ExternalApiStats,
+    ExternalApisHealthStatus,
     JobStatusListResponse,
     JobStatusResponse,
+    RequestMetrics,
     ScenarioRequest,
     ScenarioResponse,
+    SchedulerHealthStatus,
+    SystemHealthResponse,
+    SystemMetricsResponse,
 )
-from app.modules.system.service import get_latest_job_statuses
+from app.modules.system.service import (
+    get_database_pool_stats,
+    get_device_status_counts,
+    get_latest_job_statuses,
+    get_system_health_summary,
+)
 
 router = APIRouter(
     prefix="/api/v1/system",
@@ -55,6 +73,52 @@ def get_job_statuses(
             )
             for job_run in job_runs
         ]
+    )
+
+
+@router.get("/metrics", response_model=SystemMetricsResponse)
+def get_system_metrics(
+    _current_user: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    return SystemMetricsResponse(
+        requests=RequestMetrics(**get_request_metrics_snapshot()),
+        devices=DeviceStatusCounts(**get_device_status_counts(db)),
+        database=DatabasePoolStats(**get_database_pool_stats()),
+        external_apis={
+            name: ExternalApiStats(**stats)
+            for name, stats in get_external_api_snapshot().items()
+        },
+    )
+
+
+@router.get("/health", response_model=SystemHealthResponse)
+def get_system_health(
+    _current_user: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    28.31-28.36: the one call a future "System Status" admin page would
+    make — API/database/scheduler/device/external-API cards in a single
+    response. Not to be confused with the public /health and /health/
+    ready (main.py) — those are unauthenticated liveness/readiness
+    probes for Render; this is an authenticated, detailed operator view.
+    """
+    summary = get_system_health_summary(db)
+
+    return SystemHealthResponse(
+        overall_status=summary["overall_status"],
+        api=ApiHealthStatus(**summary["api"]),
+        database=DatabaseHealthStatus(**summary["database"]),
+        scheduler=SchedulerHealthStatus(**summary["scheduler"]),
+        devices=DeviceHealthStatus(**summary["devices"]),
+        external_apis=ExternalApisHealthStatus(
+            status=summary["external_apis"]["status"],
+            providers={
+                name: ExternalApiStats(**stats)
+                for name, stats in summary["external_apis"]["providers"].items()
+            },
+        ),
     )
 
 

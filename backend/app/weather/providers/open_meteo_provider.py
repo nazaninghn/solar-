@@ -1,10 +1,23 @@
+import time
 from datetime import datetime, timezone
 
 import httpx
 
+from app.core.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError
 from app.core.config import settings
+from app.core.external_api_metrics import record_external_call
 from app.weather.base import WeatherProvider
 from app.weather.schemas import WeatherPoint
+
+# 28.23: shared across every OpenMeteoProvider instance (one gets
+# constructed per call today — see app/weather/service.py — so this
+# has to live at module level to actually remember failures across
+# calls, not reset itself every time).
+_weather_circuit_breaker = CircuitBreaker(
+    name="weather",
+    failure_threshold=5,
+    recovery_timeout_seconds=60.0,
+)
 
 
 def _condition_from_cloud_cover(cloud_cover: float) -> str:
@@ -54,10 +67,7 @@ class OpenMeteoProvider(WeatherProvider):
             "timezone": "UTC",
         }
 
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
+        data = await self._fetch(url, params)
 
         hourly = data.get("hourly", {})
         times = hourly.get("time", [])
@@ -93,3 +103,39 @@ class OpenMeteoProvider(WeatherProvider):
             )
 
         return points
+
+    async def _fetch(self, url: str, params: dict) -> dict:
+        """
+        28.21-28.23: every call goes through the circuit breaker and
+        gets its outcome recorded, whether it succeeds, fails, or the
+        breaker itself refuses the call outright (in which case there's
+        no real latency to record, and the failure never touches the
+        network at all).
+        """
+        start = time.monotonic()
+        timed_out = False
+
+        async def _do_request() -> dict:
+            async with httpx.AsyncClient(timeout=10) as client:
+                response = await client.get(url, params=params)
+                response.raise_for_status()
+                return response.json()
+
+        try:
+            data = await _weather_circuit_breaker.call(_do_request)
+        except CircuitBreakerOpenError:
+            record_external_call("weather", success=False, latency_ms=0.0)
+            raise
+        except httpx.TimeoutException:
+            timed_out = True
+            latency_ms = (time.monotonic() - start) * 1000
+            record_external_call("weather", success=False, latency_ms=latency_ms, timed_out=True)
+            raise
+        except Exception:
+            latency_ms = (time.monotonic() - start) * 1000
+            record_external_call("weather", success=False, latency_ms=latency_ms)
+            raise
+        else:
+            latency_ms = (time.monotonic() - start) * 1000
+            record_external_call("weather", success=True, latency_ms=latency_ms)
+            return data

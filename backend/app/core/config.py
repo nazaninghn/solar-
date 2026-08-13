@@ -45,6 +45,30 @@ class Settings:
         "false",
     ).lower() == "true"
 
+    # 28.5: "text" (readable in a local terminal) or "json" (structured,
+    # for a production log aggregator). Production deploys should set
+    # this to "json".
+    LOG_FORMAT: str = os.getenv(
+        "LOG_FORMAT",
+        "text",
+    )
+
+    # 28.15: provisional threshold, tunable without a code change.
+    SLOW_QUERY_THRESHOLD_MS: int = int(
+        os.getenv(
+            "SLOW_QUERY_THRESHOLD_MS",
+            "1000",
+        )
+    )
+
+    # 28.37: unset by default — error tracking stays inert until a real
+    # Sentry project exists. No account is created by this codebase;
+    # this only reads a DSN if one is provided.
+    SENTRY_DSN: str = os.getenv(
+        "SENTRY_DSN",
+        "",
+    )
+
     DATABASE_URL: str = _normalize_database_url(
         os.getenv(
             "DATABASE_URL",

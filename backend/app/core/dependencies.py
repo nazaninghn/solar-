@@ -1,5 +1,5 @@
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,7 @@ bearer_scheme = HTTPBearer()
 
 
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
@@ -54,6 +55,13 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or inactive",
         )
+
+    # 28.6: request-scoped state, read back by RequestLoggingMiddleware
+    # after the route handler returns — the middleware runs outside
+    # FastAPI's dependency-injection cycle, so it can't know who the
+    # caller was except by a side channel like this.
+    request.state.user_id = user.id
+    request.state.organization_id = user.organization_id
 
     return user
 

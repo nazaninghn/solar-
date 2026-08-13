@@ -203,3 +203,16 @@ def dismiss_notification(
     db.refresh(notification)
 
     return notification
+
+
+def auto_resolve_notification(db: Session, notification: Notification) -> None:
+    """
+    28.29: the system-driven counterpart to resolve_notification — no
+    current_user, since this runs from the alert-evaluation pipeline
+    (a rule re-evaluated and no longer finds a violation), not a user
+    clicking anything.
+    """
+    notification.status = "RESOLVED"
+    notification.resolved_at = datetime.now(timezone.utc)
+
+    db.commit()

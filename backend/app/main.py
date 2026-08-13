@@ -8,7 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.analytics.router import router as analytics_router
 from app.core.config import settings
+from app.core.error_tracking import configure_error_tracking
 from app.core.logging import configure_logging
+from app.core.middleware import RequestLoggingMiddleware
 from app.database.session import get_db
 from app.jobs.device_jobs import run_device_polling_loop
 from app.jobs.scheduler import start_scheduler, stop_scheduler
@@ -29,6 +31,7 @@ from app.modules.weather.router import router as weather_router
 from app.realtime.router import router as realtime_router
 
 configure_logging()
+configure_error_tracking()
 
 
 @asynccontextmanager
@@ -57,7 +60,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
+
+# 28.6-28.8: added after CORS so it's the outermost layer — timing and
+# the request_id cover the full request lifecycle, including CORS
+# preflight handling.
+app.add_middleware(RequestLoggingMiddleware)
 
 app.include_router(auth_router)
 app.include_router(company_router)

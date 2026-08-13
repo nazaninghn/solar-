@@ -8,6 +8,7 @@ from app.models.electricity_price import ElectricityPrice
 from app.models.factory import Factory
 from app.models.financial_record import FinancialRecord
 from app.models.job_run import JobRun
+from app.models.notification import Notification
 from app.notifications.rules import (
     BatteryLowRule,
     BatteryRuleContext,
@@ -27,7 +28,7 @@ from app.notifications.rules import (
     SystemHealthRule,
     SystemRuleContext,
 )
-from app.modules.notifications.service import create_notification
+from app.modules.notifications.service import auto_resolve_notification, create_notification
 
 
 def _create_from_rule(
@@ -38,6 +39,7 @@ def _create_from_rule(
     result: dict | None,
 ) -> None:
     if result is None:
+        _auto_resolve_if_active(db, factory, alert_type, rule)
         return
 
     create_notification(
@@ -54,6 +56,48 @@ def _create_from_rule(
         unit=result.get("unit"),
         source=alert_type,
         alert_metadata=result.get("alert_metadata"),
+    )
+
+
+def _auto_resolve_if_active(
+    db: Session,
+    factory: Factory,
+    alert_type: str,
+    rule,
+) -> None:
+    """
+    28.29: a rule that no longer finds a violation means whatever it was
+    complaining about has cleared — auto-resolve the still-active alert
+    instead of leaving it sitting in UNREAD/READ forever, and post a
+    short recovery notice so the timeline shows both ends of the
+    incident. Dismissed alerts are excluded on purpose: if a user
+    already dismissed one, they've said they don't need to hear about
+    it again, recovery included.
+    """
+    active = db.scalar(
+        select(Notification)
+        .where(
+            Notification.factory_id == factory.id,
+            Notification.rule_id == rule.rule_id,
+            Notification.status.notin_(["RESOLVED", "DISMISSED"]),
+        )
+        .order_by(Notification.created_at.desc())
+    )
+
+    if active is None:
+        return
+
+    auto_resolve_notification(db, active)
+
+    create_notification(
+        db=db,
+        factory_id=factory.id,
+        notification_type=alert_type,
+        severity="INFO",
+        title=f"{active.title} — resolved",
+        message=f"The condition behind \"{active.title}\" has cleared.",
+        source=alert_type,
+        alert_metadata={"related_resource": "recovery", "recovered_notification_id": active.id},
     )
 
 
