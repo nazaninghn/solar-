@@ -48,6 +48,7 @@ from app.modules.admin.router import router as admin_router
 from app.modules.security.router import router as security_router
 from app.modules.monitoring.router import router as monitoring_router
 from app.modules.data_integrity.router import router as data_integrity_router
+from app.modules.performance.router import router as performance_router
 from app.realtime.router import router as realtime_router
 
 configure_logging()
@@ -127,6 +128,7 @@ app.include_router(admin_router)
 app.include_router(security_router)
 app.include_router(monitoring_router)
 app.include_router(data_integrity_router)
+app.include_router(performance_router)
 
 
 @app.get("/")
