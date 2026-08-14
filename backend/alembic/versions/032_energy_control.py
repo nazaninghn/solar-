@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 revision = "032_energy_control"
-down_revision = None  # Will be set by alembic autogenerate
+down_revision = "8bbd91991245"
 branch_labels = None
 depends_on = None
 
