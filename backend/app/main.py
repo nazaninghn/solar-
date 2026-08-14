@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.core.error_tracking import configure_error_tracking
 from app.core.logging import configure_logging
 from app.core.middleware import RequestLoggingMiddleware
+from app.modules.security.headers import SecurityHeadersMiddleware
 from app.database.session import get_db
 from app.jobs.device_jobs import run_device_polling_loop
 from app.jobs.scheduler import start_scheduler, stop_scheduler
@@ -44,6 +45,7 @@ from app.modules.events.router import notif_router as events_notif_router
 from app.modules.billing.router import billing_router, settlement_router
 from app.modules.advanced_analytics.router import router as analytics_v2_router
 from app.modules.admin.router import router as admin_router
+from app.modules.security.router import router as security_router
 from app.realtime.router import router as realtime_router
 
 configure_logging()
@@ -83,6 +85,7 @@ app.add_middleware(
 # the request_id cover the full request lifecycle, including CORS
 # preflight handling.
 app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(auth_router)
 app.include_router(company_router)
@@ -119,6 +122,7 @@ app.include_router(billing_router)
 app.include_router(settlement_router)
 app.include_router(analytics_v2_router)
 app.include_router(admin_router)
+app.include_router(security_router)
 
 
 @app.get("/")
