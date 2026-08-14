@@ -28,6 +28,7 @@ from app.modules.production_lines.router import router as production_lines_route
 from app.modules.recommendations.router import router as recommendations_router
 from app.modules.system.router import router as system_router
 from app.modules.weather.router import router as weather_router
+from app.modules.control.router import router as control_router
 from app.realtime.router import router as realtime_router
 
 configure_logging()
@@ -86,6 +87,7 @@ app.include_router(device_router)
 app.include_router(production_lines_router)
 app.include_router(analytics_router)
 app.include_router(system_router)
+app.include_router(control_router)
 
 
 @app.get("/")
