@@ -37,6 +37,8 @@ from app.modules.finance.router import router as finance_router
 from app.modules.orchestrator.router import router as orchestrator_router
 from app.modules.iot_gateway.router import router as iot_gateway_router
 from app.modules.alerts.router import router as alerts_router
+from app.modules.observability.router import router as observability_router
+from app.modules.observability.router import factory_router as observability_factory_router
 from app.realtime.router import router as realtime_router
 
 configure_logging()
@@ -104,6 +106,8 @@ app.include_router(finance_router)
 app.include_router(orchestrator_router)
 app.include_router(iot_gateway_router)
 app.include_router(alerts_router)
+app.include_router(observability_router)
+app.include_router(observability_factory_router)
 
 
 @app.get("/")
