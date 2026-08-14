@@ -21,6 +21,7 @@ from app.models.organization import Organization
 from app.models.password_reset_token import PasswordResetToken
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
+from app.modules.security.audit_service import EVENT_TOKEN_REUSE, log_security_event
 
 
 def register_user(
@@ -180,7 +181,12 @@ def create_tokens(db: Session, user: User) -> dict:
     }
 
 
-def refresh_access_token(db: Session, refresh_token_value: str) -> dict:
+def refresh_access_token(
+    db: Session,
+    refresh_token_value: str,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
+) -> dict:
     """24.13, with rotation (24.35): the old refresh token is revoked and
     a brand new access+refresh pair is issued, rather than reusing the
     same refresh token indefinitely."""
@@ -198,11 +204,24 @@ def refresh_access_token(db: Session, refresh_token_value: str) -> dict:
         )
     )
 
-    if (
-        stored is None
-        or stored.revoked_at is not None
-        or stored.expires_at < datetime.now(timezone.utc)
-    ):
+    if stored is not None and stored.revoked_at is not None:
+        # 82: a refresh token is only ever revoked by this function's own
+        # rotation, or by logout. Someone presenting it again means either
+        # the legitimate client retried a stale token, or it was stolen
+        # after being rotated out — worth a real security event either way,
+        # since it's the one case a bare "expired" can't explain.
+        log_security_event(
+            db,
+            event_type=EVENT_TOKEN_REUSE,
+            severity="HIGH",
+            user_id=stored.user_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            description="Reuse of an already-rotated refresh token",
+        )
+        raise ValueError("Refresh token has been revoked or is no longer valid")
+
+    if stored is None or stored.expires_at < datetime.now(timezone.utc):
         raise ValueError("Refresh token has been revoked or is no longer valid")
 
     user_id = payload.get("sub")

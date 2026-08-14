@@ -104,6 +104,18 @@ class Settings:
         )
     )
 
+    # 82: general per-IP API rate limit, distinct from the tighter
+    # login (5/min) and telemetry (60/min per device) limits — this one
+    # is the trust-boundary backstop for every other endpoint, which
+    # previously had no limit at all. Generous default so a dashboard
+    # doing several concurrent widget fetches doesn't trip it.
+    API_RATE_LIMIT_PER_MINUTE: int = int(
+        os.getenv(
+            "API_RATE_LIMIT_PER_MINUTE",
+            "300",
+        )
+    )
+
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(
         os.getenv(
             "REFRESH_TOKEN_EXPIRE_DAYS",

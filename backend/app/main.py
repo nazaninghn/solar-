@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.core.error_tracking import configure_error_tracking
 from app.core.logging import configure_logging
 from app.core.middleware import RequestLoggingMiddleware
+from app.core.api_rate_limit import GeneralAPIRateLimitMiddleware
 from app.modules.security.headers import SecurityHeadersMiddleware
 from app.database.session import get_db
 from app.jobs.device_jobs import run_device_polling_loop
@@ -45,6 +46,7 @@ from app.modules.events.router import notif_router as events_notif_router
 from app.modules.billing.router import billing_router, settlement_router
 from app.modules.advanced_analytics.router import router as analytics_v2_router
 from app.modules.admin.router import router as admin_router
+from app.modules.admin.integrations_router import router as integrations_router
 from app.modules.ai_readiness.router import router as ai_readiness_router
 from app.modules.bi.router import router as bi_router
 from app.modules.compliance.router import router as compliance_router
@@ -95,6 +97,12 @@ app.add_middleware(
 app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
+# 82: outermost of all — rejects an abusive caller before it costs
+# anything else (CORS handling, request logging, route matching, a DB
+# session). Backstops every endpoint that isn't already covered by the
+# tighter login/telemetry-specific limiters.
+app.add_middleware(GeneralAPIRateLimitMiddleware)
+
 app.include_router(auth_router)
 app.include_router(company_router)
 app.include_router(factories_router)
@@ -130,6 +138,7 @@ app.include_router(billing_router)
 app.include_router(settlement_router)
 app.include_router(analytics_v2_router)
 app.include_router(admin_router)
+app.include_router(integrations_router)
 app.include_router(ai_readiness_router)
 app.include_router(bi_router)
 app.include_router(compliance_router)

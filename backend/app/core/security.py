@@ -1,4 +1,5 @@
 import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -45,6 +46,16 @@ def create_access_token(user_id: int) -> str:
         "sub": str(user_id),
         "type": "access",
         "exp": expire,
+        # 82: without a per-token nonce, two tokens minted for the same
+        # user with the same expiry second (e.g. back-to-back refresh
+        # calls) are byte-identical JWTs — jwt.encode is deterministic
+        # for a given payload+secret. That collision silently defeated
+        # refresh-token-reuse detection: rotating a token minted the
+        # exact same string as the one just revoked, so "reusing the
+        # revoked token" and "using the valid new one" were the same
+        # request. jti guarantees distinct tokens even when minted in
+        # the same second.
+        "jti": secrets.token_hex(16),
     }
 
     return jwt.encode(
@@ -63,6 +74,7 @@ def create_refresh_token(user_id: int) -> str:
         "sub": str(user_id),
         "type": "refresh",
         "exp": expire,
+        "jti": secrets.token_hex(16),
     }
 
     return jwt.encode(

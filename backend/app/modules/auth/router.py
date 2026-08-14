@@ -12,6 +12,11 @@ from app.modules.auth.data_rights import (
     delete_own_account,
     export_own_data,
 )
+from app.modules.security.audit_service import (
+    EVENT_LOGIN_FAILED,
+    EVENT_LOGIN_SUCCESS,
+    log_security_event,
+)
 from app.schemas.auth import (
     AccountDeletionRequest,
     ForgotPasswordRequest,
@@ -94,11 +99,32 @@ def login(
         password=data.password,
     )
 
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+
     if not user:
+        log_security_event(
+            db,
+            event_type=EVENT_LOGIN_FAILED,
+            severity="INFO",
+            ip_address=ip_address,
+            user_agent=user_agent,
+            description=f"Failed login attempt for {data.email}",
+        )
         raise HTTPException(
             status_code=401,
             detail="Invalid email or password",
         )
+
+    log_security_event(
+        db,
+        event_type=EVENT_LOGIN_SUCCESS,
+        severity="INFO",
+        user_id=user.id,
+        organization_id=user.organization_id,
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
 
     return create_tokens(db, user)
 
@@ -109,10 +135,16 @@ def login(
 )
 def refresh(
     data: RefreshRequest,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     try:
-        return refresh_access_token(db, data.refresh_token)
+        return refresh_access_token(
+            db,
+            data.refresh_token,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        )
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
