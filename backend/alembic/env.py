@@ -2,6 +2,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+from sqlalchemy import text
 
 from alembic import context
 
@@ -105,6 +106,20 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        # 84: without this, a migration that needs an ACCESS EXCLUSIVE
+        # lock (e.g. ALTER TABLE ADD COLUMN) waits indefinitely if any
+        # other connection — including Render's own previous, still-
+        # running instance during a zero-downtime deploy — holds so
+        # much as an open transaction touching the same table. That's
+        # exactly what a silent 15-minute hang followed by Render's own
+        # port-scan timeout looks like: the migration was still waiting
+        # for a lock, uvicorn never even started. 30s is generous for
+        # this project's small, low-write tables; a real lock conflict
+        # now fails fast with a clear Postgres error in the deploy log
+        # instead of burning the entire deploy window in silence.
+        connection.execute(text("SET lock_timeout = '30s'"))
+        connection.execute(text("SET statement_timeout = '120s'"))
+
         context.configure(
             connection=connection, target_metadata=target_metadata
         )
