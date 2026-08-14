@@ -23,6 +23,7 @@ def register_all_jobs() -> None:
     # version (13.6-13.7) would otherwise depend on.
     from app.jobs.aggregation_jobs import register_aggregation_jobs
     from app.jobs.alert_jobs import register_alert_jobs
+    from app.jobs.bi_jobs import register_bi_jobs
     from app.jobs.daily_summary_jobs import register_daily_summary_jobs
     from app.jobs.device_health_jobs import register_device_health_jobs
     from app.jobs.escalation_jobs import register_escalation_jobs
@@ -56,6 +57,7 @@ def register_all_jobs() -> None:
     register_observability_jobs()
     register_security_jobs()
     register_finops_jobs()
+    register_bi_jobs()
 
 
 def start_scheduler() -> None:

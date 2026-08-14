@@ -29,6 +29,9 @@ from app.modules.admin.schemas import (
     SystemConfigResponse,
 )
 from app.modules.observability.system_health import get_system_health
+from app.modules.billing.models import Payment, Subscription
+from app.modules.bi.revenue import compute_mrr
+from app.modules.monitoring.models import MonitoringIncident
 
 router = APIRouter(prefix="/api/v1/admin", tags=["Admin Panel"])
 
@@ -53,17 +56,27 @@ def admin_dashboard(
     admin: User = Depends(_require_platform_admin),
     db: Session = Depends(get_db),
 ):
-    """46.26: Platform admin dashboard KPIs."""
+    """
+    46.26: Platform admin dashboard KPIs. 80: the last three fields
+    (active_subscriptions, failed_payments, monthly_revenue) were
+    hardcoded to 0 since Step 46 — real queries now, correctly
+    returning 0 today since no subscription has ever been created in
+    this deployment (see app.modules.bi.revenue's module docstring).
+    open_critical_alerts was similarly hardcoded; now a real count of
+    OPEN CRITICAL incidents.
+    """
     return AdminDashboardResponse(
         total_organizations=db.query(Organization).count(),
         active_users=db.query(User).filter(User.is_active == True).count(),
         active_factories=db.query(Factory).count(),
         online_devices=db.query(Device).filter(Device.status == "ONLINE").count(),
         offline_devices=db.query(Device).filter(Device.status == "OFFLINE").count(),
-        open_critical_alerts=0,
-        active_subscriptions=0,
-        failed_payments=0,
-        monthly_revenue=0.0,
+        open_critical_alerts=db.query(MonitoringIncident)
+        .filter(MonitoringIncident.severity == "CRITICAL", MonitoringIncident.status == "OPEN")
+        .count(),
+        active_subscriptions=db.query(Subscription).filter(Subscription.status == "ACTIVE").count(),
+        failed_payments=db.query(Payment).filter(Payment.status == "FAILED").count(),
+        monthly_revenue=compute_mrr(db),
     )
 
 
