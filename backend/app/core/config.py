@@ -125,6 +125,16 @@ class Settings:
         )
     )
 
+    # 31.22: unset by default — nothing currently stores real device
+    # credentials (only SIMULATOR devices exist; Modbus/MQTT are inert
+    # stubs), so there's no reason to force every environment to have
+    # this configured yet. Required once app.core.encryption is
+    # actually used.
+    CONNECTION_CONFIG_ENCRYPTION_KEY: str = os.getenv(
+        "CONNECTION_CONFIG_ENCRYPTION_KEY",
+        "",
+    )
+
     WEATHER_API_KEY: str = os.getenv(
         "WEATHER_API_KEY",
         "",

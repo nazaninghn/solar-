@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.forecast.service import get_energy_forecast
 from app.models.battery_system import BatterySystem
+from app.models.device import Device
 from app.models.electricity_price import ElectricityPrice
 from app.models.energy_reading import EnergyReading
 from app.models.factory import Factory
@@ -23,6 +24,10 @@ from app.modules.recommendations.engine import (
     calculate_confidence,
     calculate_recommendation_score,
     generate_recommendations,
+)
+from app.modules.recommendations.scenario_engine import (
+    evaluate_energy_scenarios,
+    rank_scenarios,
 )
 
 
@@ -206,6 +211,43 @@ async def build_energy_context(db: Session, factory: Factory) -> EnergyContext:
     )
 
 
+def check_recommendation_safety(db: Session, factory_id: int) -> dict:
+    """
+    29.29-29.30: don't let a stale/broken data source produce a
+    confident, "risky" recommendation. battery_error and meter_offline
+    look at Device.status (16.13's IoT devices, if the factory has any
+    configured) rather than BatterySystem — BatterySystem only carries
+    spec/current-SOC, not a health signal. price_unavailable is read
+    from the context the caller already built (price_level == "unknown"),
+    not queried again here.
+    """
+    battery_error = (
+        db.scalar(
+            select(Device.id).where(
+                Device.factory_id == factory_id,
+                Device.device_type == "BATTERY",
+                Device.status == "ERROR",
+                Device.is_active.is_(True),
+            )
+        )
+        is not None
+    )
+
+    meter_offline = (
+        db.scalar(
+            select(Device.id).where(
+                Device.factory_id == factory_id,
+                Device.device_type.in_(["FACTORY_METER", "GRID_METER"]),
+                Device.status == "OFFLINE",
+                Device.is_active.is_(True),
+            )
+        )
+        is not None
+    )
+
+    return {"battery_error": battery_error, "meter_offline": meter_offline}
+
+
 async def generate_factory_recommendations(
     db: Session,
     factory: Factory,
@@ -226,10 +268,33 @@ async def generate_factory_recommendations(
     data_quality = min(100.0, (count_historical_days(db, factory.id) / 7) * 100)
     confidence = calculate_confidence(weather_confidence, data_quality, RULE_STRENGTH)
 
+    safety = check_recommendation_safety(db, factory.id)
+    price_unavailable = context.price_level == "unknown"
+
+    # 29.29: any missing/broken source knocks confidence down rather
+    # than being treated as "just proceed normally" — a recommendation
+    # generated on a stale price or a broken meter isn't as trustworthy
+    # even for the types it doesn't outright block below.
+    if safety["battery_error"] or safety["meter_offline"] or price_unavailable:
+        confidence = min(confidence, 40.0)
+
+    # 29.30, 29.7: block the specific recommendation types a broken
+    # source would make actively unsafe, rather than a total blackout —
+    # a battery in ERROR shouldn't get charge/discharge instructions;
+    # unknown pricing shouldn't drive a buy/sell decision.
+    blocked_types = set()
+    if safety["battery_error"]:
+        blocked_types.update({"CHARGE_BATTERY", "DISCHARGE_BATTERY"})
+    if price_unavailable:
+        blocked_types.update({"BUY_FROM_GRID", "SELL_TO_GRID"})
+
     now = datetime.now(timezone.utc)
     created = []
 
     for item in items:
+        if item["type"] in blocked_types:
+            continue
+
         existing = db.scalar(
             select(Recommendation).where(
                 Recommendation.factory_id == factory.id,
@@ -293,6 +358,31 @@ async def generate_factory_recommendations(
         )
 
     return created
+
+
+async def get_scenario_comparison(db: Session, factory: Factory) -> dict:
+    """29.23-29.24, surfaced for explainability (29.18) — the same
+    EnergyContext the rule engine already builds, run through the
+    scenario comparison instead of/in addition to independent rules."""
+    context = await build_energy_context(db, factory)
+    imbalance_kwh = context.expected_consumption_kwh - context.solar_forecast_kwh
+
+    scenarios = evaluate_energy_scenarios(
+        context, factory.battery_degradation_cost_per_kwh
+    )
+    ranked = rank_scenarios(scenarios)
+    optimal_name = ranked[0].name if ranked else None
+
+    return {
+        "imbalance_kwh": round(imbalance_kwh, 2),
+        "scenarios": [
+            {
+                **scenario.__dict__,
+                "is_optimal": scenario.name == optimal_name,
+            }
+            for scenario in scenarios
+        ],
+    }
 
 
 def get_recommendations(db: Session, factory_id: int) -> list[Recommendation]:

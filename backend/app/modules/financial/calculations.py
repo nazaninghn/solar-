@@ -74,6 +74,24 @@ def calculate_battery_degradation_cost(
     return round(discharged_energy_kwh * degradation_cost_per_kwh, 2)
 
 
+def get_battery_degradation_rate(
+    factory_override_per_kwh: float | None,
+    buy_price: float,
+    default_rate: float,
+) -> float:
+    """
+    29.11: a factory's own battery_degradation_cost_per_kwh, once set,
+    takes over from the system default (a share of the current buy
+    price — see BATTERY_DEGRADATION_RATE's docstring in
+    financial/service.py for why that's a proportional placeholder
+    rather than a fixed absolute number).
+    """
+    if factory_override_per_kwh is not None:
+        return factory_override_per_kwh
+
+    return buy_price * default_rate
+
+
 def calculate_net_battery_saving(
     gross_saving: float,
     degradation_cost: float,

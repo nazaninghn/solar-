@@ -32,6 +32,11 @@ class DailyEnergyResponse(BaseModel):
     peak_solar_kw: float | None
     data_completeness: float
     data_quality: str
+    # 31.26: only populated by GET .../analytics/today — daily/monthly
+    # history rows leave these null (a historical day's "current" SOC
+    # isn't a meaningful concept, and grid cost is a same-day figure).
+    battery_soc: float | None = None
+    grid_cost_today: float | None = None
 
 
 class MonthlyEnergyResponse(BaseModel):

@@ -13,8 +13,13 @@ from app.modules.notifications.preferences_service import (
     get_or_create_preferences,
     update_preferences,
 )
-from app.modules.notifications.schemas import NotificationResponse, UnreadCountResponse
+from app.modules.notifications.schemas import (
+    NotificationListResponse,
+    NotificationResponse,
+    UnreadCountResponse,
+)
 from app.modules.notifications.service import (
+    acknowledge_notification,
     dismiss_notification,
     get_notifications,
     get_unread_count,
@@ -30,21 +35,27 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=list[NotificationResponse])
+@router.get("", response_model=NotificationListResponse)
 def list_notifications(
     status: str | None = Query(default=None),
     severity: str | None = Query(default=None),
     type: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
     factory: Factory = Depends(get_accessible_factory),
     db: Session = Depends(get_db),
 ):
-    return get_notifications(
+    items, total = get_notifications(
         db=db,
         factory_id=factory.id,
         status_filter=status,
         severity_filter=severity,
         type_filter=type,
+        page=page,
+        limit=limit,
     )
+
+    return NotificationListResponse(items=items, total=total, page=page, limit=limit)
 
 
 @router.get("/unread-count", response_model=UnreadCountResponse)
@@ -79,6 +90,19 @@ def notification_mark_as_read(
     db: Session = Depends(get_db),
 ):
     return mark_as_read(db=db, current_user=current_user, notification_id=notification_id)
+
+
+@notification_router.patch(
+    "/{notification_id}/acknowledge", response_model=NotificationResponse
+)
+def notification_acknowledge(
+    notification_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return acknowledge_notification(
+        db=db, current_user=current_user, notification_id=notification_id
+    )
 
 
 @notification_router.patch(

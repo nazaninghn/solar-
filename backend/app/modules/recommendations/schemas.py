@@ -43,3 +43,21 @@ class RecommendationResponse(BaseModel):
 
 class RejectRequest(BaseModel):
     reason: str | None = None
+
+
+class ScenarioResponse(BaseModel):
+    name: str
+    applicable: bool
+    total_cost: float
+    grid_import_kwh: float
+    grid_export_kwh: float
+    battery_charge_kwh: float
+    battery_discharge_kwh: float
+    load_shifted_kwh: float
+    explanation: str
+    is_optimal: bool
+
+
+class ScenarioComparisonResponse(BaseModel):
+    imbalance_kwh: float
+    scenarios: list[ScenarioResponse]

@@ -54,6 +54,16 @@ class Factory(Base):
         Float, nullable=True
     )
 
+    # 29.11: null means "use the system default" (5% of the current buy
+    # price — app.modules.financial.service.BATTERY_DEGRADATION_RATE),
+    # which both the daily financial calculation and the new scenario
+    # engine (app.modules.recommendations.scenario_engine) fall back to.
+    # A factory-specific override becomes meaningful once real
+    # chemistry/cycle-life/replacement-cost data exists per-battery.
+    battery_degradation_cost_per_kwh: Mapped[float | None] = mapped_column(
+        Float, nullable=True
+    )
+
     grid_connection_type: Mapped[str] = mapped_column(String(100), nullable=True)
     electricity_tariff: Mapped[str] = mapped_column(String(100), nullable=True)
 

@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, ForeignKey
+from datetime import time
+
+from sqlalchemy import Boolean, ForeignKey, Time
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -23,12 +25,23 @@ class NotificationPreference(Base):
     financial_alerts: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     system_alerts: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    # 23.31: only dashboard is actually wired up. Email/SMS toggles exist
-    # so the preferences shape is stable once those channels land, but
-    # setting them true today has no effect — 23.32's channel fan-out
-    # only has a dashboard implementation.
+    # 30.10, added once DEVICE became its own notification type
+    # (previously folded into system_alerts) — a device-offline alert
+    # and a background-job-failure alert are different enough concerns
+    # that a user might reasonably want one without the other.
+    device_alerts: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    # 30.14-30.18: now wired up — app/notifications/delivery.py fans out
+    # to email/SMS per these flags, replacing 23.31's "shape is stable
+    # but nothing consumes them yet" state.
     email_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     sms_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     dashboard_enabled: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True
     )
+
+    # 30.20: both null means quiet hours are off. Only non-CRITICAL/
+    # non-URGENT deliveries are suppressed during the window — see
+    # app/notifications/delivery.py's is_within_quiet_hours.
+    quiet_hours_start: Mapped[time | None] = mapped_column(Time, nullable=True)
+    quiet_hours_end: Mapped[time | None] = mapped_column(Time, nullable=True)

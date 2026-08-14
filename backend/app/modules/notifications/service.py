@@ -8,6 +8,17 @@ from app.models.factory import Factory
 from app.models.notification import Notification
 from app.models.user import User
 
+# 30.29: severity describes how bad the underlying condition is;
+# priority describes how urgently a human should be interrupted. They
+# usually correlate, so this is the fallback whenever a caller doesn't
+# pass an explicit priority — not every rule needs its own opinion.
+_SEVERITY_PRIORITY_DEFAULTS = {
+    "CRITICAL": "URGENT",
+    "WARNING": "HIGH",
+    "SUCCESS": "LOW",
+    "INFO": "LOW",
+}
+
 
 def create_notification(
     db: Session,
@@ -25,6 +36,7 @@ def create_notification(
     unit: str | None = None,
     source: str | None = None,
     alert_metadata: dict | None = None,
+    priority: str | None = None,
 ) -> Notification:
     """
     Two dedup strategies coexist: the original date-scoped
@@ -72,6 +84,7 @@ def create_notification(
         message=message,
         is_read=False,
         status="UNREAD",
+        priority=priority or _SEVERITY_PRIORITY_DEFAULTS.get(severity, "NORMAL"),
         deduplication_key=deduplication_key,
         rule_id=rule_id,
         value=value,
@@ -86,6 +99,15 @@ def create_notification(
     db.commit()
     db.refresh(notification)
 
+    # 30.14-30.15: dispatch lives here, not in each rule/caller — a
+    # single funnel point means no call site can forget to fan out to
+    # email/SMS, and the cooldown-deduplicated "return existing" paths
+    # above never reach this line, so a suppressed duplicate correctly
+    # never re-dispatches.
+    from app.notifications.delivery import dispatch_notification_deliveries
+
+    dispatch_notification_deliveries(db, notification)
+
     return notification
 
 
@@ -95,7 +117,12 @@ def get_notifications(
     status_filter: str | None = None,
     severity_filter: str | None = None,
     type_filter: str | None = None,
-) -> list[Notification]:
+    page: int = 1,
+    limit: int = 20,
+) -> tuple[list[Notification], int]:
+    """30.9: notifications accumulate indefinitely with no retention job
+    (unlike device telemetry, Step 26) — pagination was a real gap, not
+    just a nice-to-have, once a factory has months of alert history."""
     query = select(Notification).where(Notification.factory_id == factory_id)
 
     if status_filter:
@@ -105,7 +132,15 @@ def get_notifications(
     if type_filter:
         query = query.where(Notification.type == type_filter)
 
-    return db.scalars(query.order_by(Notification.created_at.desc())).all()
+    total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
+
+    items = db.scalars(
+        query.order_by(Notification.created_at.desc())
+        .offset((page - 1) * limit)
+        .limit(limit)
+    ).all()
+
+    return items, total
 
 
 def get_unread_count(db: Session, factory_id: int) -> int:
@@ -168,6 +203,29 @@ def mark_as_read(db: Session, current_user: User, notification_id: int) -> Notif
     notification.is_read = True
     notification.status = "READ"
     notification.read_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(notification)
+
+    return notification
+
+
+def acknowledge_notification(
+    db: Session, current_user: User, notification_id: int
+) -> Notification:
+    """
+    30.24-30.25: "a human has seen this and is on it" — distinct from
+    READ (may have just been glanced at in a list) and distinct from
+    RESOLVED (the underlying issue may still be actively being worked,
+    not fixed yet). Doesn't require the notification to be in any
+    particular prior status — acknowledging an already-read alert, or
+    one nobody's opened yet, are both legitimate.
+    """
+    notification = _get_owned_notification(db, current_user, notification_id)
+
+    notification.status = "ACKNOWLEDGED"
+    notification.acknowledged_by = current_user.id
+    notification.acknowledged_at = datetime.now(timezone.utc)
 
     db.commit()
     db.refresh(notification)

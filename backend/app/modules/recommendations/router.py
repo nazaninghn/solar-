@@ -5,12 +5,17 @@ from app.core.dependencies import get_accessible_factory, get_current_user
 from app.database.session import get_db
 from app.models.factory import Factory
 from app.models.user import User
-from app.modules.recommendations.schemas import RecommendationResponse, RejectRequest
+from app.modules.recommendations.schemas import (
+    RecommendationResponse,
+    RejectRequest,
+    ScenarioComparisonResponse,
+)
 from app.modules.recommendations.service import (
     accept_recommendation,
     generate_factory_recommendations,
     get_recommendation_detail,
     get_recommendations,
+    get_scenario_comparison,
     reject_recommendation,
 )
 
@@ -28,6 +33,21 @@ async def list_recommendations(
     await generate_factory_recommendations(db=db, factory=factory)
 
     return get_recommendations(db=db, factory_id=factory.id)
+
+
+# Registered before /{recommendation_id} — a literal path segment must
+# be matched ahead of the int-typed dynamic one, or "scenarios" gets
+# tried against `recommendation_id: int` first.
+@router.get("/scenarios", response_model=ScenarioComparisonResponse)
+async def recommendation_scenarios(
+    factory: Factory = Depends(get_accessible_factory),
+    db: Session = Depends(get_db),
+):
+    """29.23-29.24, 29.18: what each option (do nothing / grid / battery
+    / shift load / combined) would cost right now, and which one is
+    cheapest — the explicit comparison behind whatever the rule engine
+    above ends up recommending."""
+    return await get_scenario_comparison(db=db, factory=factory)
 
 
 @router.get("/{recommendation_id}", response_model=RecommendationResponse)

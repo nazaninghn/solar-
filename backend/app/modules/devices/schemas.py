@@ -85,3 +85,16 @@ class TelemetryIngestResponse(BaseModel):
     id: int
     recorded: bool
     duplicate: bool
+
+
+class DeviceHealthResponse(BaseModel):
+    device_id: int
+    status: str
+    last_seen_at: datetime | None
+    health_score: float
+    freshness_score: float
+    status_score: float
+    error_score: float
+    age_minutes: float | None
+    consecutive_error_count: int
+    last_error_message: str | None

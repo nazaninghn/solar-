@@ -25,6 +25,7 @@ from app.models.audit_log import AuditLog
 from app.models.refresh_token import RefreshToken
 from app.models.password_reset_token import PasswordResetToken
 from app.models.email_verification_token import EmailVerificationToken
+from app.models.notification_delivery import NotificationDelivery
 
 __all__ = [
     "Organization",
@@ -54,4 +55,5 @@ __all__ = [
     "RefreshToken",
     "PasswordResetToken",
     "EmailVerificationToken",
+    "NotificationDelivery",
 ]

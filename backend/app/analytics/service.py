@@ -3,9 +3,11 @@ from datetime import date as date_type, datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.battery_system import BatterySystem
 from app.models.energy_daily import EnergyDaily
 from app.models.energy_hourly import EnergyHourly
 from app.models.energy_monthly import EnergyMonthly
+from app.models.financial_record import FinancialRecord
 from app.modules.energy.aggregation import (
     aggregate_factory_day,
     aggregate_factory_hour,
@@ -44,17 +46,43 @@ def _daily_to_dict(row: EnergyDaily) -> dict:
         "peak_solar_kw": row.peak_solar_kw,
         "data_completeness": row.data_completeness,
         "data_quality": row.data_quality,
+        "battery_soc": None,
+        "grid_cost_today": None,
     }
 
 
 def get_today_analytics(db: Session, factory_id: int) -> dict | None:
+    """
+    31.26's "Current Energy Status" — extends the existing /analytics/
+    today (Step 22) with two live-only fields rather than forking a
+    separate /energy-status endpoint: battery_soc (an instantaneous
+    reading, not something daily/monthly rows have) and grid_cost_today
+    (today's FinancialRecord.grid_purchase_cost, reused rather than
+    recomputed — same Step 22.39 rule as the rest of this module).
+    """
     today = datetime.now(timezone.utc).date()
     row = aggregate_factory_day(db, factory_id, today)
 
     if not row:
         return None
 
-    return _daily_to_dict(row)
+    result = _daily_to_dict(row)
+
+    battery = db.scalar(
+        select(BatterySystem).where(BatterySystem.factory_id == factory_id)
+    )
+    result["battery_soc"] = battery.state_of_charge_percent if battery else None
+
+    financial_record = db.scalar(
+        select(FinancialRecord).where(
+            FinancialRecord.factory_id == factory_id, FinancialRecord.date == today
+        )
+    )
+    result["grid_cost_today"] = (
+        financial_record.grid_purchase_cost if financial_record else None
+    )
+
+    return result
 
 
 def get_hourly_analytics(

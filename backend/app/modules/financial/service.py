@@ -24,6 +24,7 @@ from app.modules.financial.calculations import (
     calculate_solar_contribution_percent,
     calculate_solar_savings,
     calculate_total_savings,
+    get_battery_degradation_rate,
 )
 from app.modules.financial.enums import FinancialTransactionType
 
@@ -103,6 +104,8 @@ def compute_daily_financial_record(
     """
     start, end = _day_bounds_utc(target_date)
 
+    factory = db.get(Factory, factory_id)
+
     readings = db.scalars(
         select(EnergyReading).where(
             EnergyReading.factory_id == factory_id,
@@ -172,8 +175,13 @@ def compute_daily_financial_record(
         battery_savings += calculate_battery_savings(
             reading.battery_discharge_kwh, BATTERY_EFFICIENCY, buy_price
         )
+        degradation_rate = get_battery_degradation_rate(
+            factory.battery_degradation_cost_per_kwh if factory else None,
+            buy_price,
+            BATTERY_DEGRADATION_RATE,
+        )
         battery_degradation_cost += calculate_battery_degradation_cost(
-            reading.battery_discharge_kwh, buy_price * BATTERY_DEGRADATION_RATE
+            reading.battery_discharge_kwh, degradation_rate
         )
         energy_sales_revenue += calculate_energy_sales(
             reading.grid_export_kwh, sell_price

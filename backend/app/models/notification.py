@@ -75,6 +75,32 @@ class Notification(Base):
     # Step 23 additions.
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="UNREAD")
 
+    # 30.29: LOW/NORMAL/HIGH/URGENT — deliberately separate from
+    # severity (INFO/WARNING/CRITICAL/SUCCESS). Severity describes how
+    # bad the underlying condition is; priority describes how urgently
+    # a human should be interrupted about it. They usually correlate
+    # (see notifications/engine.py's default mapping) but a
+    # recommendation is INFO-severity yet NORMAL-priority, not LOW —
+    # it's actionable, just not describing anything broken.
+    priority: Mapped[str] = mapped_column(String(20), nullable=False, default="NORMAL")
+
+    # 30.24: recorded separately from resolved_at — acknowledging means
+    # "a human has seen this and is on it", not "the underlying issue
+    # is fixed". Both can be true at different times for the same alert.
+    acknowledged_by: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    acknowledged_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # 30.13: set once this notification has triggered an escalation, so
+    # the escalation job never sends a second escalation for the same
+    # unacknowledged alert.
+    escalated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     # 23.19's fingerprint components — kept separate from
     # deduplication_key (Step 14, date-scoped) since cooldown-based dedup
     # (23.18) needs to check "was this rule triggered recently", not

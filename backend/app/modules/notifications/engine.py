@@ -12,6 +12,8 @@ from app.models.notification import Notification
 from app.notifications.rules import (
     BatteryLowRule,
     BatteryRuleContext,
+    DeviceHealthRuleContext,
+    DeviceOfflineRule,
     EnergyBalanceRule,
     EnergyBalanceRuleContext,
     EnergyDeficitRule,
@@ -145,6 +147,10 @@ def notify_recommendation(
         factory_id=factory.id,
         notification_type="RECOMMENDATION",
         severity="INFO",
+        # 30.29's own example table: a recommendation is NORMAL, not the
+        # LOW an INFO severity would default to — it's actionable, not
+        # just informational noise.
+        priority="NORMAL",
         title=title,
         message=description,
         deduplication_key=f"factory-{factory.id}-recommendation-{recommendation_id}",
@@ -153,6 +159,8 @@ def notify_recommendation(
             "recommended_action": None,
             "related_resource": "recommendation",
             "related_resource_id": recommendation_id,
+            # 30.37: frontend routes here on click, no guessing needed.
+            "deep_link": f"/recommendations/{recommendation_id}",
         },
     )
 
@@ -212,15 +220,17 @@ def notify_financial_status(
     )
 
 
+def notify_device_offline(db: Session, factory: Factory, offline_devices: list) -> None:
+    rule = DeviceOfflineRule()
+    result = rule.evaluate(DeviceHealthRuleContext(offline_devices=offline_devices))
+    _create_from_rule(db, factory, "DEVICE", rule, result)
+
+
 def notify_system_health(
-    db: Session, factory: Factory, offline_devices: list, recent_job_failures: list
+    db: Session, factory: Factory, recent_job_failures: list
 ) -> None:
     rule = SystemHealthRule()
-    result = rule.evaluate(
-        SystemRuleContext(
-            offline_devices=offline_devices, recent_job_failures=recent_job_failures
-        )
-    )
+    result = rule.evaluate(SystemRuleContext(recent_job_failures=recent_job_failures))
     _create_from_rule(db, factory, "SYSTEM", rule, result)
 
 
@@ -274,8 +284,10 @@ def evaluate_all_alert_rules(db: Session, factory: Factory, context) -> None:
     notify_financial_status(db, factory, today_cost, average_30d_cost)
 
     offline_devices = _get_offline_devices(db, factory.id)
+    notify_device_offline(db, factory, offline_devices)
+
     recent_job_failures = _get_recent_job_failures(db)
-    notify_system_health(db, factory, offline_devices, recent_job_failures)
+    notify_system_health(db, factory, recent_job_failures)
 
 
 def _get_average_price_24h(db: Session, factory_id: int) -> float:

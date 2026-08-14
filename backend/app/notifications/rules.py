@@ -35,6 +35,7 @@ class BatteryLowRule:
                 "alert_metadata": {
                     "recommended_action": "DISCHARGE_BATTERY",
                     "related_resource": "battery",
+                    "deep_link": "/battery",
                 },
             }
 
@@ -49,7 +50,7 @@ class BatteryLowRule:
                 "value": context.soc_percent,
                 "threshold": 20,
                 "unit": "%",
-                "alert_metadata": {"related_resource": "battery"},
+                "alert_metadata": {"related_resource": "battery", "deep_link": "/battery"},
             }
 
         return None
@@ -80,7 +81,7 @@ class PriceHighRule:
             "value": context.current_price,
             "threshold": None,
             "unit": "per_kwh",
-            "alert_metadata": {"recommended_action": "DISCHARGE_BATTERY"},
+            "alert_metadata": {"recommended_action": "DISCHARGE_BATTERY", "deep_link": "/pricing"},
         }
 
 
@@ -116,7 +117,7 @@ class PriceSpikeRule:
             "value": context.current_price,
             "threshold": round(spike_threshold, 2),
             "unit": "per_kwh",
-            "alert_metadata": {},
+            "alert_metadata": {"deep_link": "/pricing"},
         }
 
 
@@ -143,7 +144,7 @@ class WeatherForecastRule:
             "value": context.solar_reduction_percent,
             "threshold": 30,
             "unit": "%",
-            "alert_metadata": {"recommended_action": "CHARGE_BATTERY"},
+            "alert_metadata": {"recommended_action": "CHARGE_BATTERY", "deep_link": "/forecast"},
         }
 
 
@@ -175,7 +176,7 @@ class EnergyDeficitRule:
             "value": round(deficit, 2),
             "threshold": 0,
             "unit": "kwh",
-            "alert_metadata": {"recommended_action": "BUY_FROM_GRID"},
+            "alert_metadata": {"recommended_action": "BUY_FROM_GRID", "deep_link": "/energy"},
         }
 
 
@@ -200,7 +201,7 @@ class EnergySurplusRule:
             "value": round(surplus, 2),
             "threshold": 0,
             "unit": "kwh",
-            "alert_metadata": {"recommended_action": "SELL_TO_GRID"},
+            "alert_metadata": {"recommended_action": "SELL_TO_GRID", "deep_link": "/energy"},
         }
 
 
@@ -236,7 +237,7 @@ class FinancialSpikeRule:
             "value": round(context.today_cost, 2),
             "threshold": round(context.average_30d_cost, 2),
             "unit": "currency",
-            "alert_metadata": {},
+            "alert_metadata": {"deep_link": "/financial"},
         }
 
 
@@ -269,13 +270,49 @@ class FinancialSavingsRule:
             "value": round(context.today_cost, 2),
             "threshold": round(context.average_30d_cost, 2),
             "unit": "currency",
-            "alert_metadata": {},
+            "alert_metadata": {"deep_link": "/financial"},
+        }
+
+
+@dataclass
+class DeviceHealthRuleContext:
+    offline_devices: list
+
+
+class DeviceOfflineRule:
+    """
+    30.4: DEVICE_ALERT is its own notification type, distinct from
+    SYSTEM_ALERT — split out of what used to be one combined
+    SystemHealthRule so a device going offline and a background job
+    failing don't share a rule_id/cooldown (an active device-offline
+    alert shouldn't suppress or get suppressed by an unrelated job
+    failure, and vice versa).
+    """
+
+    rule_id = "DEVICE_OFFLINE"
+    cooldown_minutes = 30
+
+    def evaluate(self, context: DeviceHealthRuleContext) -> dict | None:
+        if not context.offline_devices:
+            return None
+
+        # 30.12: one alert naming every offline device, not one alert
+        # per device.
+        names = ", ".join(d.name for d in context.offline_devices)
+
+        return {
+            "severity": "CRITICAL",
+            "title": "Devices not reporting data",
+            "message": f"Devices not reporting data: {names}.",
+            "value": len(context.offline_devices),
+            "threshold": 0,
+            "unit": "devices",
+            "alert_metadata": {"related_resource": "devices", "deep_link": "/devices"},
         }
 
 
 @dataclass
 class SystemRuleContext:
-    offline_devices: list
     recent_job_failures: list
 
 
@@ -284,29 +321,19 @@ class SystemHealthRule:
     cooldown_minutes = 30
 
     def evaluate(self, context: SystemRuleContext) -> dict | None:
-        if not context.offline_devices and not context.recent_job_failures:
+        if not context.recent_job_failures:
             return None
 
-        parts = []
-
-        if context.offline_devices:
-            names = ", ".join(d.name for d in context.offline_devices)
-            parts.append(f"Devices not reporting data: {names}.")
-
-        if context.recent_job_failures:
-            names = ", ".join(
-                sorted({j.job_name for j in context.recent_job_failures})
-            )
-            parts.append(f"Background jobs failing: {names}.")
+        names = ", ".join(sorted({j.job_name for j in context.recent_job_failures}))
 
         return {
-            "severity": "CRITICAL" if context.offline_devices else "WARNING",
-            "title": "System health issue detected",
-            "message": " ".join(parts),
-            "value": len(context.offline_devices) + len(context.recent_job_failures),
+            "severity": "WARNING",
+            "title": "Background jobs failing",
+            "message": f"Background jobs failing: {names}.",
+            "value": len(context.recent_job_failures),
             "threshold": 0,
-            "unit": "issues",
-            "alert_metadata": {"related_resource": "system"},
+            "unit": "jobs",
+            "alert_metadata": {"related_resource": "system", "deep_link": "/system/health"},
         }
 
 
@@ -343,5 +370,5 @@ class EnergyBalanceRule:
             "value": context.diff_kwh,
             "threshold": context.tolerance_kwh,
             "unit": "kWh",
-            "alert_metadata": {"related_resource": "energy_balance"},
+            "alert_metadata": {"related_resource": "energy_balance", "deep_link": "/analytics"},
         }

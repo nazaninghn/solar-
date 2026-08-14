@@ -55,6 +55,8 @@ async def poll_devices() -> None:
 
                 device.status = data.get("status", "ONLINE")
                 device.last_seen_at = datetime.now(timezone.utc)
+                device.consecutive_error_count = 0
+                device.last_error_message = None
 
                 _latest_by_factory[device.factory_id][device.device_type] = data
                 touched_factories.add(device.factory_id)
@@ -62,48 +64,63 @@ async def poll_devices() -> None:
                 power_kw = data.get("power_kw")
                 soc_percent = data.get("soc_percent")
 
-                # 22.32: validate before persisting, not after. Only
-                # INVERTER and FACTORY_METER can't be negative — BATTERY
-                # (26.20's charge/discharge sign) and GRID_METER (net
-                # import minus export) are legitimately signed.
-                is_valid = power_kw is not None and abs(power_kw) <= MAX_PLAUSIBLE_POWER_KW
-                if is_valid and device.device_type in ("INVERTER", "FACTORY_METER"):
-                    is_valid = validate_power_reading(power_kw)
-                if is_valid and soc_percent is not None:
-                    is_valid = validate_soc_reading(soc_percent)
+                # power_kw is NOT NULL on the table — a genuinely absent
+                # value (not merely an implausible one) has nothing to
+                # persist, so this device is skipped this cycle rather
+                # than storing a fabricated 0.0 tagged as data.
+                if power_kw is None:
+                    continue
 
-                if is_valid:
-                    raw_data = {
-                        k: v for k, v in data.items() if k not in _KNOWN_TELEMETRY_KEYS
-                    } or None
+                # 22.32/31.19-31.20: still validated before persisting,
+                # but a failing reading is now stored as data_quality=
+                # INVALID rather than silently dropped — 31.7 wants raw
+                # payloads kept for debugging even when the parsed
+                # values look wrong. Only INVERTER and FACTORY_METER
+                # can't be negative — BATTERY (26.20's charge/discharge
+                # sign) and GRID_METER (net import minus export) are
+                # legitimately signed.
+                data_quality = "GOOD"
+                if abs(power_kw) > MAX_PLAUSIBLE_POWER_KW:
+                    data_quality = "INVALID"
+                elif device.device_type in ("INVERTER", "FACTORY_METER") and not validate_power_reading(power_kw):
+                    data_quality = "INVALID"
+                elif soc_percent is not None and not validate_soc_reading(soc_percent):
+                    data_quality = "INVALID"
 
-                    # 26.36: upsert-on-conflict, not a plain insert —
-                    # the (device_id, timestamp) unique constraint added
-                    # this step means a raw db.add() could raise on a
-                    # rare timestamp collision and roll back every other
-                    # device's reading in this same commit along with it.
-                    db.execute(
-                        insert(DeviceEnergyReading)
-                        .values(
-                            factory_id=device.factory_id,
-                            device_id=device.id,
-                            timestamp=data.get(
-                                "timestamp", datetime.now(timezone.utc)
-                            ),
-                            power_kw=power_kw,
-                            energy_kwh=data.get("energy_today_kwh"),
-                            voltage=data.get("voltage"),
-                            frequency=data.get("frequency"),
-                            soc_percent=soc_percent,
-                            raw_data=raw_data,
-                            status=data.get("status", "ONLINE"),
-                        )
-                        .on_conflict_do_nothing(
-                            index_elements=["device_id", "timestamp"],
-                        )
+                raw_data = {
+                    k: v for k, v in data.items() if k not in _KNOWN_TELEMETRY_KEYS
+                } or None
+
+                # 26.36: upsert-on-conflict, not a plain insert — the
+                # (device_id, timestamp) unique constraint means a raw
+                # db.add() could raise on a rare timestamp collision and
+                # roll back every other device's reading in this same
+                # commit along with it.
+                db.execute(
+                    insert(DeviceEnergyReading)
+                    .values(
+                        factory_id=device.factory_id,
+                        device_id=device.id,
+                        timestamp=data.get(
+                            "timestamp", datetime.now(timezone.utc)
+                        ),
+                        power_kw=power_kw,
+                        energy_kwh=data.get("energy_today_kwh"),
+                        voltage=data.get("voltage"),
+                        frequency=data.get("frequency"),
+                        soc_percent=soc_percent,
+                        raw_data=raw_data,
+                        status=data.get("status", "ONLINE"),
+                        data_quality=data_quality,
                     )
+                    .on_conflict_do_nothing(
+                        index_elements=["device_id", "timestamp"],
+                    )
+                )
             except Exception as error:
                 device.status = "ERROR"
+                device.consecutive_error_count += 1
+                device.last_error_message = str(error)[:500]
                 # WARNING, not ERROR — a single device failing to poll
                 # (unsupported connection type, transient timeout) is
                 # handled gracefully right here, not a system fault.

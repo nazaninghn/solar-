@@ -84,3 +84,16 @@ class DeviceEnergyReading(Base):
         String(30),
         nullable=False,
     )
+
+    # 31.19-31.20: GOOD/SUSPECT/INVALID/MISSING/ESTIMATED. Before this,
+    # a reading that failed validation was silently dropped entirely
+    # (22.32's original "validate before persisting" design) — now it's
+    # persisted with data_quality="INVALID" instead, since 31.7 wants
+    # the raw payload kept for debugging even when the parsed values
+    # look wrong, and a silently-vanished reading is a worse debugging
+    # experience than a flagged one. MISSING/ESTIMATED aren't produced
+    # by anything yet (no gap-fill/interpolation exists) — defined for
+    # forward compatibility, not currently written.
+    data_quality: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="GOOD"
+    )

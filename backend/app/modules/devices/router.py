@@ -6,6 +6,7 @@ from app.auth.permissions import MANAGE_ENERGY
 from app.core.dependencies import get_accessible_factory, get_current_user
 from app.database.session import get_db
 from app.devices.auth import get_device_from_api_key
+from app.devices.health import calculate_device_health_score
 from app.devices.rate_limit import enforce_telemetry_rate_limit
 from app.models.device import Device
 from app.models.factory import Factory
@@ -13,6 +14,7 @@ from app.models.user import User
 from app.modules.devices.schemas import (
     DeviceCreate,
     DeviceCreatedResponse,
+    DeviceHealthResponse,
     DeviceKeyResponse,
     DeviceResponse,
     DeviceStatusResponse,
@@ -106,6 +108,25 @@ def delete_device_endpoint(
     db: Session = Depends(get_db),
 ):
     delete_device(db=db, current_user=current_user, device_id=device_id)
+
+
+@device_router.get("/{device_id}/health", response_model=DeviceHealthResponse)
+def get_device_health_endpoint(
+    device_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """31.17, 31.21: 0-100 health score blending data freshness,
+    status, and recent error rate."""
+    device = get_owned_device(db=db, current_user=current_user, device_id=device_id)
+    health = calculate_device_health_score(device)
+
+    return DeviceHealthResponse(
+        device_id=device.id,
+        status=device.status,
+        last_seen_at=device.last_seen_at,
+        **health,
+    )
 
 
 @device_router.post("/{device_id}/test-connection", response_model=TestConnectionResponse)

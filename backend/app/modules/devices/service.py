@@ -124,6 +124,16 @@ def ingest_telemetry(db: Session, device: Device, data) -> tuple[DeviceEnergyRea
     the latter as an error — 26.36's replay protection should be quiet,
     not a 4xx, since a device retrying a delivery it's unsure landed is
     normal, expected behavior.
+
+    31.19-31.20's data_quality flag deliberately isn't used here the
+    way it is in the internal poll loop (device_jobs.py) — this is a
+    real external-facing API boundary a third-party device pushes to,
+    so an invalid payload is still hard-rejected with 400 rather than
+    silently stored as INVALID. The poll loop has no "caller" to give
+    that feedback to; this one does, and losing that feedback would
+    remove the signal an integrator needs to know their device is
+    sending garbage. Every row that reaches the insert below is
+    already known-valid, so it keeps the column's GOOD default.
     """
     if not is_timestamp_plausible(data.timestamp):
         raise ValueError(

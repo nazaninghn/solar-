@@ -4,7 +4,9 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Integer,
     String,
+    Text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -91,6 +93,30 @@ class Device(Base):
     last_seen_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
+    )
+
+    # 31.17: "Error Count" / "Last Error" — resets to 0/None on the next
+    # successful poll (app/jobs/device_jobs.py), so this tracks
+    # *consecutive* failures, not a lifetime total. That's the shape
+    # calculate_device_health_score (app/devices/health.py) actually
+    # needs — a device that failed 50 times last month and has been
+    # fine since shouldn't score worse than one that just started
+    # failing.
+    consecutive_error_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0
+    )
+    last_error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # 31.22: Fernet ciphertext (app/core/encryption.py), never plaintext
+    # — holds a JSON-serialized dict of whatever a real protocol adapter
+    # needs (Modbus host/port/unit id, MQTT broker/username/password,
+    # a REST API key, etc.). Nullable because SIMULATOR devices (the
+    # only kind that actually work today — see app/devices/modbus.py/
+    # mqtt.py/api.py's inert-stub docstrings) have no credentials to
+    # store. Read/write through app.modules.devices.connection_config,
+    # never accessed directly.
+    connection_config_encrypted: Mapped[str | None] = mapped_column(
+        Text, nullable=True
     )
 
     created_at: Mapped[datetime] = mapped_column(
