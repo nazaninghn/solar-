@@ -1,4 +1,5 @@
-from datetime import date as date_type, datetime
+from datetime import date as date_type
+from datetime import datetime
 
 from sqlalchemy import Date, DateTime, Float, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column

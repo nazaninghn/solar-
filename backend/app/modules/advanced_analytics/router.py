@@ -8,14 +8,12 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_accessible_factory
 from app.database.session import get_db
 from app.models.factory import Factory
-from app.modules.advanced_analytics.anomaly_detection import detect_solar_anomaly
 from app.modules.advanced_analytics.forecast_evaluation import evaluate_forecast_accuracy
 from app.modules.advanced_analytics.kpi_engine import compute_energy_kpis
 from app.modules.advanced_analytics.models import (
     Anomaly,
     DailyEnergyMetric,
     DevicePerformance,
-    EnergyKPI,
     RecommendationImpact,
 )
 from app.modules.advanced_analytics.schemas import (

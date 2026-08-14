@@ -4,7 +4,6 @@ STEP 39.20: Command Publisher.
 Publishes commands to MQTT broker and manages delivery state.
 """
 
-import json
 import logging
 from datetime import datetime, timezone
 

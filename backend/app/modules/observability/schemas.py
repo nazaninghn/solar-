@@ -1,7 +1,8 @@
 """STEP 41: Observability schemas."""
 
 from datetime import datetime
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
 
 
 class DataSourceResponse(BaseModel):

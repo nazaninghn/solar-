@@ -53,9 +53,11 @@ def create_alert_from_event(
     """43.15-43.16: Create alert with dedup and cooldown."""
     now = datetime.now(timezone.utc)
 
-    # Dedup key
+    # Dedup key. 85: usedforsecurity=False - dedup fingerprint, not a
+    # security use of MD5.
     dedup_key = hashlib.md5(
-        f"{event.organization_id}:{event.factory_id}:{event.device_id}:{event.event_type}".encode()
+        f"{event.organization_id}:{event.factory_id}:{event.device_id}:{event.event_type}".encode(),
+        usedforsecurity=False,
     ).hexdigest()
 
     # Check existing open alert

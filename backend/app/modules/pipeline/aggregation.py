@@ -9,7 +9,6 @@ import logging
 from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import func
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.models.device import Device

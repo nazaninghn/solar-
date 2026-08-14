@@ -8,7 +8,7 @@ Checks: device online, battery SOC limits, power limits, temperature.
 from sqlalchemy.orm import Session
 
 from app.models.device import Device
-from app.modules.control.models import EnergyAction, ACTION_CHARGE_BATTERY, ACTION_DISCHARGE_BATTERY
+from app.modules.control.models import ACTION_CHARGE_BATTERY, ACTION_DISCHARGE_BATTERY, EnergyAction
 from app.modules.control.schemas import SafetyCheckResult
 
 # Safety thresholds (could be per-factory config later)

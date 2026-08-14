@@ -6,7 +6,7 @@ Uses previous days' production scaled by cloud coverage forecast.
 """
 
 import math
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from app.modules.forecasting.models_ml.base import BaseForecastModel, ForecastResult
 

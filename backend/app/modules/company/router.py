@@ -8,7 +8,6 @@ from app.core.dependencies import get_current_user
 from app.database.session import get_db
 from app.models.factory import Factory
 from app.models.user import User
-from app.modules.performance.quota_enforcement import enforce_user_quota
 from app.modules.company.schemas import (
     AuditLogResponse,
     CompanyUserCreate,
@@ -30,6 +29,7 @@ from app.modules.company.service import (
     update_company_user,
     update_organization,
 )
+from app.modules.performance.quota_enforcement import enforce_user_quota
 
 router = APIRouter(
     prefix="/api/v1/company",

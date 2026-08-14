@@ -19,7 +19,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
 
-
 # --- Action Types ---
 ACTION_CHARGE_BATTERY = "CHARGE_BATTERY"
 ACTION_DISCHARGE_BATTERY = "DISCHARGE_BATTERY"

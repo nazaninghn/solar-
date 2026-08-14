@@ -1,6 +1,7 @@
 """STEP 45: Analytics schemas."""
 
 from datetime import datetime
+
 from pydantic import BaseModel
 
 

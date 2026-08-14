@@ -7,55 +7,57 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.analytics.router import router as analytics_router
+from app.core.api_rate_limit import GeneralAPIRateLimitMiddleware
 from app.core.config import settings
 from app.core.error_tracking import configure_error_tracking
 from app.core.logging import configure_logging
 from app.core.middleware import RequestLoggingMiddleware
-from app.core.api_rate_limit import GeneralAPIRateLimitMiddleware
-from app.modules.security.headers import SecurityHeadersMiddleware
 from app.database.session import get_db
 from app.jobs.device_jobs import run_device_polling_loop
 from app.jobs.scheduler import start_scheduler, stop_scheduler
+from app.modules.admin.integrations_router import router as integrations_router
+from app.modules.admin.router import router as admin_router
+from app.modules.advanced_analytics.router import router as analytics_v2_router
+from app.modules.ai_readiness.router import router as ai_readiness_router
+from app.modules.alerts.router import router as alerts_router
 from app.modules.auth.router import router as auth_router
 from app.modules.battery.router import router as battery_router
+from app.modules.bi.router import router as bi_router
+from app.modules.billing.router import billing_router, settlement_router
 from app.modules.company.router import router as company_router
-from app.modules.devices.router import device_router, router as devices_router
+from app.modules.compliance.router import router as compliance_router
+from app.modules.control.router import router as control_router
+from app.modules.data_integrity.router import router as data_integrity_router
+from app.modules.devices.router import device_router
+from app.modules.devices.router import router as devices_router
+from app.modules.disaster_recovery.router import router as dr_router
 from app.modules.energy.router import router as energy_router
+from app.modules.events.router import alert_router as events_alert_router
+from app.modules.events.router import notif_router as events_notif_router
 from app.modules.factories.router import router as factories_router
+from app.modules.finance.router import router as finance_router
 from app.modules.financial.router import router as financial_router
+from app.modules.finops.router import router as finops_router
 from app.modules.forecast.router import router as forecast_router
-from app.modules.notifications.router import notification_router, router as notifications_router
+from app.modules.forecasting.router import router as forecasting_router
+from app.modules.gateway.router import router as gateway_router
+from app.modules.iot_gateway.router import router as iot_gateway_router
+from app.modules.monitoring.router import router as monitoring_router
+from app.modules.notifications.router import notification_router
+from app.modules.notifications.router import router as notifications_router
+from app.modules.observability.router import factory_router as observability_factory_router
+from app.modules.observability.router import router as observability_router
+from app.modules.optimization.router import router as optimization_router
+from app.modules.orchestrator.router import router as orchestrator_router
+from app.modules.performance.router import router as performance_router
+from app.modules.pipeline.router import router as pipeline_router
 from app.modules.pricing.router import router as pricing_router
 from app.modules.production_lines.router import router as production_lines_router
 from app.modules.recommendations.router import router as recommendations_router
+from app.modules.security.headers import SecurityHeadersMiddleware
+from app.modules.security.router import router as security_router
 from app.modules.system.router import router as system_router
 from app.modules.weather.router import router as weather_router
-from app.modules.control.router import router as control_router
-from app.modules.gateway.router import router as gateway_router
-from app.modules.pipeline.router import router as pipeline_router
-from app.modules.forecasting.router import router as forecasting_router
-from app.modules.optimization.router import router as optimization_router
-from app.modules.finance.router import router as finance_router
-from app.modules.orchestrator.router import router as orchestrator_router
-from app.modules.iot_gateway.router import router as iot_gateway_router
-from app.modules.alerts.router import router as alerts_router
-from app.modules.observability.router import router as observability_router
-from app.modules.observability.router import factory_router as observability_factory_router
-from app.modules.events.router import alert_router as events_alert_router
-from app.modules.events.router import notif_router as events_notif_router
-from app.modules.billing.router import billing_router, settlement_router
-from app.modules.advanced_analytics.router import router as analytics_v2_router
-from app.modules.admin.router import router as admin_router
-from app.modules.admin.integrations_router import router as integrations_router
-from app.modules.ai_readiness.router import router as ai_readiness_router
-from app.modules.bi.router import router as bi_router
-from app.modules.compliance.router import router as compliance_router
-from app.modules.finops.router import router as finops_router
-from app.modules.security.router import router as security_router
-from app.modules.monitoring.router import router as monitoring_router
-from app.modules.data_integrity.router import router as data_integrity_router
-from app.modules.performance.router import router as performance_router
-from app.modules.disaster_recovery.router import router as dr_router
 from app.realtime.router import router as realtime_router
 
 configure_logging()

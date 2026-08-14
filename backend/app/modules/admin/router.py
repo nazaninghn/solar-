@@ -14,24 +14,24 @@ from app.models.factory import Factory
 from app.models.organization import Organization
 from app.models.user import User
 from app.modules.admin.models import (
-    APIKey,
     AdminAuditLog,
+    APIKey,
     FeatureFlag,
     SystemConfig,
 )
 from app.modules.admin.schemas import (
-    APIKeyCreateResponse,
-    APIKeyResponse,
     AdminAuditResponse,
     AdminDashboardResponse,
+    APIKeyCreateResponse,
+    APIKeyResponse,
     FeatureFlagResponse,
     HealthResponse,
     SystemConfigResponse,
 )
-from app.modules.observability.system_health import get_system_health
-from app.modules.billing.models import Payment, Subscription
 from app.modules.bi.revenue import compute_mrr
+from app.modules.billing.models import Payment, Subscription
 from app.modules.monitoring.models import MonitoringIncident
+from app.modules.observability.system_health import get_system_health
 
 router = APIRouter(prefix="/api/v1/admin", tags=["Admin Panel"])
 

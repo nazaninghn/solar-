@@ -1,4 +1,5 @@
-from datetime import date as date_type, datetime, timedelta, timezone
+from datetime import date as date_type
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -11,7 +12,6 @@ from app.models.financial_record import FinancialRecord
 from app.modules.energy.aggregation import (
     aggregate_factory_day,
     aggregate_factory_hour,
-    aggregate_factory_month,
 )
 from app.modules.financial.calculations import (
     calculate_grid_dependency_percent,

@@ -12,6 +12,19 @@ from app.modules.auth.data_rights import (
     delete_own_account,
     export_own_data,
 )
+from app.modules.auth.service import (
+    authenticate_user,
+    create_tokens,
+    refresh_access_token,
+    register_user,
+    request_password_reset,
+    resend_verification_email,
+    reset_password,
+    verify_email,
+)
+from app.modules.auth.service import (
+    logout as logout_service,
+)
 from app.modules.security.audit_service import (
     EVENT_LOGIN_FAILED,
     EVENT_LOGIN_SUCCESS,
@@ -29,18 +42,6 @@ from app.schemas.auth import (
     TokenResponse,
     VerifyEmailRequest,
 )
-from app.modules.auth.service import (
-    authenticate_user,
-    create_tokens,
-    logout as logout_service,
-    refresh_access_token,
-    register_user,
-    request_password_reset,
-    resend_verification_email,
-    reset_password,
-    verify_email,
-)
-
 
 router = APIRouter(
     prefix="/api/v1/auth",

@@ -18,8 +18,8 @@ from app.modules.forecast.service import count_historical_days, get_factory_fore
 from app.modules.notifications.engine import evaluate_all_alert_rules, notify_recommendation
 from app.modules.pricing.service import get_current_price
 from app.modules.recommendations.engine import (
-    EnergyContext,
     RULE_STRENGTH,
+    EnergyContext,
     TimeWindow,
     calculate_confidence,
     calculate_recommendation_score,

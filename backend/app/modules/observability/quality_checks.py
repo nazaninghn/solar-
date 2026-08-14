@@ -5,7 +5,7 @@ Freshness, completeness, validity, energy balance, outlier detection.
 """
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 

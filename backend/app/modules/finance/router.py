@@ -6,14 +6,13 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_permission
-from app.auth.permissions import MANAGE_FINANCIAL, VIEW_FINANCIAL
-from app.core.dependencies import get_accessible_factory, get_current_user
+from app.auth.permissions import MANAGE_FINANCIAL
+from app.core.dependencies import get_accessible_factory
 from app.database.session import get_db
 from app.models.factory import Factory
 from app.models.user import User
 from app.modules.finance.calculation import (
     calculate_daily_financial,
-    calculate_roi,
     calculate_savings_attribution,
 )
 from app.modules.finance.models import (
@@ -25,7 +24,6 @@ from app.modules.finance.schemas import (
     DailyFinancialResponse,
     FinancialSummaryResponse,
     MonthlyFinancialResponse,
-    ROIResponse,
     SavingsAttributionResponse,
     TariffCreate,
     TariffResponse,

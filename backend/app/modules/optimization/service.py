@@ -188,7 +188,8 @@ def _make_dedup_key(factory_id: int, rec_type: str, start_time: datetime | None)
     if start_time:
         time_bucket = start_time.strftime("%Y-%m-%d-%H")
     raw = f"{factory_id}:{rec_type}:{time_bucket}"
-    return hashlib.md5(raw.encode()).hexdigest()
+    # 85: usedforsecurity=False - dedup fingerprint, not a security use.
+    return hashlib.md5(raw.encode(), usedforsecurity=False).hexdigest()
 
 
 def _add_history(

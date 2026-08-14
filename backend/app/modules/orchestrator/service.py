@@ -8,7 +8,7 @@ import json
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.device import Device
@@ -22,13 +22,10 @@ from app.modules.orchestrator.models import (
     CS_FAILED,
     CS_PENDING,
     CS_QUEUED,
-    CS_REJECTED,
     CS_SENT,
     CS_VERIFIED,
-    PRI_SAFETY,
     Command,
     CommandAudit,
-    CommandVerification,
     ControlLock,
     ControlSnapshot,
 )

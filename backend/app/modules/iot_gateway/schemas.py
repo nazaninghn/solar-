@@ -1,6 +1,7 @@
 """STEP 39: IoT Gateway schemas."""
 
 from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 

@@ -7,13 +7,10 @@ Telemetry, health, and capabilities for devices.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import require_permission
-from app.auth.permissions import MANAGE_ENERGY, VIEW_ENERGY
-from app.core.dependencies import get_accessible_factory, get_current_user
+from app.core.dependencies import get_accessible_factory
 from app.database.session import get_db
 from app.models.device import Device
 from app.models.factory import Factory
-from app.models.user import User
 from app.modules.gateway.health_monitor import run_health_check_all
 from app.modules.gateway.models import DeviceCapability, DeviceTelemetry
 from app.modules.gateway.schemas import (
@@ -101,7 +98,7 @@ def check_all_devices_health(
     db: Session = Depends(get_db),
 ):
     """33.10: Run health check on all factory devices."""
-    changes = run_health_check_all(db=db, factory_id=factory.id)
+    run_health_check_all(db=db, factory_id=factory.id)
 
     # Return current status of all devices
     devices = db.query(Device).filter(

@@ -9,9 +9,9 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.factory import Factory
 from app.modules.admin.models import APIUsageMetric
 from app.modules.bi.funnel import compute_activation_rate
-from app.models.factory import Factory
 
 # Below these sample sizes, a percentage swing is noise, not signal —
 # 3 signups going from 2/3 activated to 1/3 activated is a 33-point

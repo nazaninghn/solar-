@@ -9,14 +9,12 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
-    Integer,
     String,
     Text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
-
 
 # --- Quality Flags (33.9) ---
 QUALITY_GOOD = "GOOD"

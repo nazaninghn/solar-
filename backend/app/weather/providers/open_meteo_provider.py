@@ -113,7 +113,6 @@ class OpenMeteoProvider(WeatherProvider):
         network at all).
         """
         start = time.monotonic()
-        timed_out = False
 
         async def _do_request() -> dict:
             async with httpx.AsyncClient(timeout=10) as client:
@@ -127,7 +126,6 @@ class OpenMeteoProvider(WeatherProvider):
             record_external_call("weather", success=False, latency_ms=0.0)
             raise
         except httpx.TimeoutException:
-            timed_out = True
             latency_ms = (time.monotonic() - start) * 1000
             record_external_call("weather", success=False, latency_ms=latency_ms, timed_out=True)
             raise

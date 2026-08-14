@@ -5,7 +5,6 @@ real ForecastAccuracy history the forecasting engine already writes
 telemetry, just a trend comparison over what already exists.
 """
 
-import math
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select

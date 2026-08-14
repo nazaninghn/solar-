@@ -11,15 +11,12 @@ from datetime import datetime, timedelta, timezone
 
 from app.modules.optimization.constraints import OptimizationConstraints
 from app.modules.optimization.models import (
-    PRIORITY_CRITICAL,
     PRIORITY_HIGH,
-    PRIORITY_LOW,
     PRIORITY_MEDIUM,
     REC_BUY_GRID,
     REC_CHARGE_BATTERY,
     REC_DISCHARGE_BATTERY,
     REC_SELL_SURPLUS,
-    REC_SHIFT_LOAD,
 )
 
 logger = logging.getLogger(__name__)

@@ -4,7 +4,6 @@ STEP 39.6/39.14-39.16: Telemetry Consumer.
 Processes incoming MQTT telemetry: dedup, validation, sequence check, storage.
 """
 
-import json
 import logging
 from datetime import datetime, timedelta, timezone
 

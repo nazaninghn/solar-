@@ -10,8 +10,6 @@ import logging
 import re
 from urllib.parse import urlparse
 
-from fastapi import HTTPException, Request, status
-
 logger = logging.getLogger(__name__)
 
 # 53.44: Max request body size (10MB default)
@@ -68,8 +66,11 @@ def validate_url_not_ssrf(url: str) -> bool:
         if not hostname:
             return False
 
-        # Block common internal hostnames
-        blocked_hosts = {"localhost", "127.0.0.1", "0.0.0.0", "metadata", "metadata.google.internal"}
+        # Block common internal hostnames. 85: bandit B104 flags the
+        # literal "0.0.0.0" here as "binding to all interfaces" - a
+        # false positive, since this is an SSRF blocklist checking a
+        # hostname *against* 0.0.0.0, not binding a server to it.
+        blocked_hosts = {"localhost", "127.0.0.1", "0.0.0.0", "metadata", "metadata.google.internal"}  # nosec B104
         if hostname.lower() in blocked_hosts:
             return False
 

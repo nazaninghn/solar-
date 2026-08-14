@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_permission
-from app.auth.permissions import MANAGE_ENERGY, VIEW_ENERGY
+from app.auth.permissions import MANAGE_ENERGY
 from app.core.dependencies import get_accessible_factory, get_current_user
 from app.database.session import get_db
 from app.models.factory import Factory
@@ -15,7 +15,6 @@ from app.modules.alerts.oncall import (
     list_on_call_schedule,
 )
 from app.modules.alerts.schemas import (
-    AcknowledgeRequest,
     AlertCommentCreate,
     AlertCommentResponse,
     AlertResponse,

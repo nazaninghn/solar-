@@ -30,7 +30,7 @@ from app.modules.control.models import (
     EnergyAction,
 )
 from app.modules.control.safety import run_safety_checks
-from app.modules.control.schemas import ActionCreateRequest, SafetyCheckResult
+from app.modules.control.schemas import ActionCreateRequest
 
 
 def create_action(

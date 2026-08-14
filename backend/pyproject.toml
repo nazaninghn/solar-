@@ -1,0 +1,26 @@
+[tool.ruff]
+line-length = 110
+target-version = "py313"
+
+[tool.ruff.lint]
+# 85: E/F/I only - pycodestyle errors, pyflakes, import sorting. Not
+# flake8-bugbear (B008 flags FastAPI's required `Depends(...)` default-
+# argument pattern on ~580 real, correct call sites) and not F821 for
+# this codebase specifically, since SQLAlchemy's `Mapped["Factory"]`
+# string forward-references (used throughout app/models/ to avoid
+# circular imports) are a real, standard ORM pattern ruff's static
+# analysis can't resolve - not actual undefined names.
+select = ["E4", "E7", "E9", "F", "I"]
+# F821: see comment above (SQLAlchemy Mapped[] forward references).
+# E711/E712: SQLAlchemy overloads Column.__eq__ to build SQL (`== None`
+# -> `IS NULL`, `== True` -> `= true`) - ruff's suggested fix (`is None`)
+# doesn't build a SQL clause at all in a .filter(...)/.where(...) call,
+# it would silently break the query. Every occurrence in this codebase
+# is inside an ORM filter expression, confirmed before disabling this.
+ignore = ["F821", "E711", "E712"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test files intentionally import fixtures/helpers that may look
+# unused to a per-file pass, and construct rows with unused local
+# variables for readability.
+"tests/*" = ["F401", "F841"]

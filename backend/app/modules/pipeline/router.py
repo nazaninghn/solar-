@@ -15,7 +15,6 @@ from app.models.factory import Factory
 from app.modules.pipeline.kpi_engine import compute_kpis
 from app.modules.pipeline.models import (
     DailyEnergySummary,
-    DataQualityLog,
     MetricCatalog,
     Telemetry5m,
     TelemetryHourly,

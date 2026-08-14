@@ -5,7 +5,6 @@ Evaluates conditions, manages cooldown, deduplication, and alert creation.
 """
 
 import hashlib
-import json
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -13,11 +12,9 @@ from sqlalchemy.orm import Session
 
 from app.modules.alerts.models import (
     ALERT_OPEN,
-    SEV_CRITICAL,
     SEV_HIGH,
     SEV_MEDIUM,
     Alert,
-    AlertRule,
     AlertSuppression,
 )
 
@@ -113,8 +110,11 @@ def _create_alert_if_new(
     """Create alert with deduplication and cooldown."""
     now = datetime.now(timezone.utc)
 
-    # Dedup key (40.17)
-    dedup_key = hashlib.md5(f"{factory_id}:{alert_type}:{source_id or ''}".encode()).hexdigest()
+    # Dedup key (40.17). 85: usedforsecurity=False - this is a dedup
+    # fingerprint, not a security use of MD5.
+    dedup_key = hashlib.md5(
+        f"{factory_id}:{alert_type}:{source_id or ''}".encode(), usedforsecurity=False
+    ).hexdigest()
 
     # Check suppression (40.18)
     suppressed = (

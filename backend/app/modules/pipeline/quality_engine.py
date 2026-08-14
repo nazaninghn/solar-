@@ -29,7 +29,8 @@ LATE_THRESHOLD = timedelta(minutes=5)
 def compute_fingerprint(device_id: int, timestamp: datetime, metric: str) -> str:
     """34.11: Generate fingerprint for duplicate detection."""
     raw = f"{device_id}:{timestamp.isoformat()}:{metric}"
-    return hashlib.md5(raw.encode()).hexdigest()
+    # 85: usedforsecurity=False - dedup fingerprint, not a security use.
+    return hashlib.md5(raw.encode(), usedforsecurity=False).hexdigest()
 
 
 def is_duplicate(db: Session, device_id: int, timestamp: datetime, metric: str) -> bool:

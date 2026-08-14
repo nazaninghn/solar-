@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_permission
-from app.auth.permissions import MANAGE_RECOMMENDATIONS, VIEW_RECOMMENDATIONS
-from app.core.dependencies import get_accessible_factory, get_current_user
+from app.auth.permissions import MANAGE_RECOMMENDATIONS
+from app.core.dependencies import get_accessible_factory
 from app.database.session import get_db
 from app.models.factory import Factory
 from app.models.user import User
-from app.modules.optimization.models import FlexibleLoad, SmartRecommendation
+from app.modules.optimization.models import FlexibleLoad
 from app.modules.optimization.schemas import (
     FlexibleLoadCreate,
     FlexibleLoadResponse,

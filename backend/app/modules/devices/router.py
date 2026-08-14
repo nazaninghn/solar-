@@ -11,7 +11,6 @@ from app.devices.rate_limit import enforce_telemetry_rate_limit
 from app.models.device import Device
 from app.models.factory import Factory
 from app.models.user import User
-from app.modules.performance.quota_enforcement import enforce_device_quota
 from app.modules.devices.schemas import (
     DeviceCreate,
     DeviceCreatedResponse,
@@ -35,6 +34,7 @@ from app.modules.devices.service import (
     test_connection,
     update_device,
 )
+from app.modules.performance.quota_enforcement import enforce_device_quota
 
 # Factory-scoped endpoints.
 router = APIRouter(

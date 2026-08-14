@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from app.models.device import Device
-from app.modules.gateway.models import QUALITY_GOOD, QUALITY_INVALID, QUALITY_OUT_OF_RANGE, DeviceTelemetry
+from app.modules.gateway.models import QUALITY_GOOD, QUALITY_OUT_OF_RANGE, DeviceTelemetry
 from app.modules.gateway.schemas import TelemetryPayload
 
 logger = logging.getLogger(__name__)

@@ -5,12 +5,12 @@ Checks database, queue, MQTT, weather/price feeds, forecast engine.
 """
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.modules.observability.models import DataSource, SRC_DEGRADED, SRC_DOWN, SRC_HEALTHY, SRC_UNKNOWN
+from app.modules.observability.models import SRC_DEGRADED, SRC_DOWN, SRC_HEALTHY, SRC_UNKNOWN, DataSource
 
 logger = logging.getLogger(__name__)
 

@@ -23,9 +23,11 @@ from app.modules.disaster_recovery.schemas import (
 )
 from app.modules.disaster_recovery.service import (
     check_checklist_item,
-    complete_drill as complete_drill_service,
     seed_recovery_targets,
     start_drill,
+)
+from app.modules.disaster_recovery.service import (
+    complete_drill as complete_drill_service,
 )
 
 router = APIRouter(prefix="/api/v1/admin/disaster-recovery", tags=["Disaster Recovery"])

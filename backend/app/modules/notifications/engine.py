@@ -9,6 +9,7 @@ from app.models.factory import Factory
 from app.models.financial_record import FinancialRecord
 from app.models.job_run import JobRun
 from app.models.notification import Notification
+from app.modules.notifications.service import auto_resolve_notification, create_notification
 from app.notifications.rules import (
     BatteryLowRule,
     BatteryRuleContext,
@@ -25,12 +26,11 @@ from app.notifications.rules import (
     PriceHighRule,
     PriceRuleContext,
     PriceSpikeRule,
-    WeatherForecastRule,
-    WeatherRuleContext,
     SystemHealthRule,
     SystemRuleContext,
+    WeatherForecastRule,
+    WeatherRuleContext,
 )
-from app.modules.notifications.service import auto_resolve_notification, create_notification
 
 
 def _create_from_rule(

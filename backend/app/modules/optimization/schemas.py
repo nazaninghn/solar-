@@ -1,6 +1,7 @@
 """STEP 36: Optimization schemas."""
 
 from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 

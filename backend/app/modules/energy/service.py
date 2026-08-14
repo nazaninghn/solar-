@@ -1,4 +1,5 @@
-from datetime import date as date_type, datetime, timedelta, timezone
+from datetime import date as date_type
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session

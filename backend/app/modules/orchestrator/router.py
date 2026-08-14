@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_permission
 from app.auth.permissions import MANAGE_ENERGY
-from app.core.dependencies import get_accessible_factory, get_current_user
+from app.core.dependencies import get_accessible_factory
 from app.database.session import get_db
 from app.models.factory import Factory
 from app.models.user import User

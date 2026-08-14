@@ -4,7 +4,7 @@ STEP 78: FinOps & Cost Optimization models.
 
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, Float, String, Text
+from sqlalchemy import Date, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base

@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  # 85: same normalization app/core/config.py applies at runtime -
+  # postgresql+psycopg:// against the service container defined below.
+  DATABASE_URL: postgresql+psycopg://solarflow:solarflow_password@localhost:5432/solarflow_test
+  JWT_SECRET: ci-test-secret-not-used-in-production
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check app
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      # 85: fails the build on medium+ severity - the same threshold
+      # this step's own scan was triaged against. Low-severity findings
+      # (simulator random(), event-type constant names flagged by
+      # B105/B311 heuristics) are documented false positives, not a CI
+      # gate - see docs/operations/qa-report.md.
+      - run: bandit -r app -x tests --severity-level medium
+      - run: pip-audit -r requirements.txt
+      - run: detect-secrets scan --baseline .secrets.baseline --all-files app/ alembic/ scripts/ docs/ tests/ .env.example
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: solarflow
+          POSTGRES_PASSWORD: solarflow_password
+          POSTGRES_DB: solarflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt
+      - run: alembic upgrade head
+      - run: pytest -q
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, security, test]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: solarflow
+          POSTGRES_PASSWORD: solarflow_password
+          POSTGRES_DB: solarflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt
+      - run: alembic upgrade head
+      # 85: this is the same "does it actually start and answer /health"
+      # check that a Render deploy needs to pass - runs it here, before
+      # Render ever sees the commit, rather than finding out from a
+      # failed production deploy (see the Step 83->84 incident: alembic
+      # hung and no port ever opened - a build-verification job like
+      # this wouldn't have prevented that specific lock-conflict cause,
+      # but it does catch "the app doesn't start at all" before deploy).
+      - run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health; then
+              echo "health check passed"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "app never became healthy"
+          exit 1

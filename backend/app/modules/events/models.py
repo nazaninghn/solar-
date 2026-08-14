@@ -7,12 +7,10 @@ from datetime import datetime
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Float,
     ForeignKey,
     Integer,
     String,
     Text,
-    Time,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 

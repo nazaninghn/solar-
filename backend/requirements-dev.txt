@@ -1,0 +1,7 @@
+# 85: dev/CI-only tooling - not shipped to production (Render installs
+# only requirements.txt). Versions pinned loosely; CI is the place
+# that would actually notice a breaking tool upgrade.
+ruff>=0.8
+bandit>=1.8
+pip-audit>=2.7
+detect-secrets>=1.5

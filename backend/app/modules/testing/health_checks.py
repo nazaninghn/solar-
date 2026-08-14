@@ -4,14 +4,14 @@ STEP 48.47: Deployment health checks and readiness validation.
 
 from datetime import datetime, timezone
 
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
 
 def check_database_connectivity(db: Session) -> dict:
     """Verify database connection and basic query."""
     try:
-        result = db.execute(text("SELECT 1"))
+        db.execute(text("SELECT 1"))
         return {"status": "ok", "latency_ms": 0}
     except Exception as e:
         return {"status": "error", "error": str(e)}
@@ -28,10 +28,19 @@ def check_migration_status(db: Session) -> dict:
 
 
 def check_table_exists(db: Session, table_name: str) -> bool:
-    """Check if a critical table exists."""
+    """Check if a critical table exists.
+
+    85: previously built the query via f-string interpolation
+    (`f"SELECT 1 FROM {table_name}"`), flagged by bandit (B608) as a
+    SQL injection vector. Every call site today passes a hardcoded
+    constant, not user input, so there was no live exploit path - but
+    the pattern itself was still wrong to leave in a function anyone
+    could call with anything later. SQLAlchemy's inspector checks
+    table existence against the catalog directly, with no string
+    interpolation into SQL at all.
+    """
     try:
-        db.execute(text(f"SELECT 1 FROM {table_name} LIMIT 0"))
-        return True
+        return inspect(db.get_bind()).has_table(table_name)
     except Exception:
         return False
 
