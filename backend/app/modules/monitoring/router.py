@@ -12,15 +12,22 @@ from app.models.user import User
 from app.modules.monitoring.models import (
     DeploymentRecord,
     IncidentEvent,
+    IncidentPostmortem,
     MonitoringAlertRule,
     MonitoringIncident,
+    PostmortemCorrectiveAction,
 )
 from app.modules.monitoring.schemas import (
     AlertRuleResponse,
+    CorrectiveActionCreate,
+    CorrectiveActionResponse,
+    CorrectiveActionUpdate,
     DeploymentResponse,
     IncidentEventResponse,
     IncidentResponse,
     MonitoringOverviewResponse,
+    PostmortemResponse,
+    PostmortemUpsert,
 )
 
 router = APIRouter(prefix="/api/v1/admin/monitoring", tags=["Production Monitoring"])
@@ -144,7 +151,152 @@ def resolve_incident(
     ))
     db.commit()
     db.refresh(inc)
-    return inc
+
+    # 77.66-77.68: a soft nudge, not a hard gate — blocking incident
+    # resolution on a missing postmortem carries real operational risk
+    # (a forgotten form field shouldn't leave a live incident stuck
+    # OPEN), so this surfaces as a response flag the caller can act on
+    # rather than a 4xx.
+    postmortem_required = False
+    if inc.severity in ("CRITICAL", "HIGH"):
+        existing = (
+            db.query(IncidentPostmortem.id)
+            .filter(IncidentPostmortem.incident_id == inc.id)
+            .first()
+        )
+        postmortem_required = existing is None
+
+    response = IncidentResponse.model_validate(inc)
+    response.postmortem_required = postmortem_required
+    return response
+
+
+# --- Postmortems (77.66-77.68) ---
+
+
+@router.get("/incidents/{incident_id}/postmortem", response_model=PostmortemResponse)
+def get_postmortem(
+    incident_id: int,
+    admin: User = Depends(_require_admin),
+    db: Session = Depends(get_db),
+):
+    postmortem = (
+        db.query(IncidentPostmortem)
+        .filter(IncidentPostmortem.incident_id == incident_id)
+        .first()
+    )
+    if not postmortem:
+        raise HTTPException(status_code=404, detail="No postmortem exists for this incident.")
+    return postmortem
+
+
+@router.post("/incidents/{incident_id}/postmortem", response_model=PostmortemResponse)
+def upsert_postmortem(
+    incident_id: int,
+    data: PostmortemUpsert,
+    admin: User = Depends(_require_admin),
+    db: Session = Depends(get_db),
+):
+    """Create-or-update — one postmortem per incident, refined over time
+    as the investigation progresses rather than filed once and frozen."""
+    inc = db.query(MonitoringIncident).filter(MonitoringIncident.id == incident_id).first()
+    if not inc:
+        raise HTTPException(status_code=404, detail="Incident not found.")
+
+    postmortem = (
+        db.query(IncidentPostmortem)
+        .filter(IncidentPostmortem.incident_id == incident_id)
+        .first()
+    )
+    now = datetime.now(timezone.utc)
+
+    if postmortem is None:
+        postmortem = IncidentPostmortem(incident_id=incident_id, root_cause=data.root_cause, created_at=now)
+        db.add(postmortem)
+
+    postmortem.root_cause = data.root_cause
+    postmortem.customer_impact = data.customer_impact
+    postmortem.technical_impact = data.technical_impact
+    postmortem.timeline = data.timeline
+    postmortem.resolution = data.resolution
+    postmortem.preventive_actions = data.preventive_actions
+    postmortem.owner = data.owner
+    postmortem.updated_at = now
+
+    db.commit()
+    db.refresh(postmortem)
+    return postmortem
+
+
+@router.get("/postmortems/{postmortem_id}/actions", response_model=list[CorrectiveActionResponse])
+def list_corrective_actions(
+    postmortem_id: int,
+    admin: User = Depends(_require_admin),
+    db: Session = Depends(get_db),
+):
+    return (
+        db.query(PostmortemCorrectiveAction)
+        .filter(PostmortemCorrectiveAction.postmortem_id == postmortem_id)
+        .order_by(PostmortemCorrectiveAction.created_at.asc())
+        .all()
+    )
+
+
+@router.post(
+    "/postmortems/{postmortem_id}/actions",
+    response_model=CorrectiveActionResponse,
+    status_code=201,
+)
+def create_corrective_action(
+    postmortem_id: int,
+    data: CorrectiveActionCreate,
+    admin: User = Depends(_require_admin),
+    db: Session = Depends(get_db),
+):
+    postmortem = db.get(IncidentPostmortem, postmortem_id)
+    if not postmortem:
+        raise HTTPException(status_code=404, detail="Postmortem not found.")
+
+    action = PostmortemCorrectiveAction(
+        postmortem_id=postmortem_id,
+        description=data.description,
+        owner=data.owner,
+        priority=data.priority,
+        deadline=data.deadline,
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(action)
+    db.commit()
+    db.refresh(action)
+    return action
+
+
+@router.patch(
+    "/postmortems/{postmortem_id}/actions/{action_id}",
+    response_model=CorrectiveActionResponse,
+)
+def update_corrective_action(
+    postmortem_id: int,
+    action_id: int,
+    data: CorrectiveActionUpdate,
+    admin: User = Depends(_require_admin),
+    db: Session = Depends(get_db),
+):
+    action = (
+        db.query(PostmortemCorrectiveAction)
+        .filter(
+            PostmortemCorrectiveAction.id == action_id,
+            PostmortemCorrectiveAction.postmortem_id == postmortem_id,
+        )
+        .first()
+    )
+    if not action:
+        raise HTTPException(status_code=404, detail="Corrective action not found.")
+
+    action.status = data.status
+    db.commit()
+    db.refresh(action)
+    return action
 
 
 @router.get("/deployments", response_model=list[DeploymentResponse])

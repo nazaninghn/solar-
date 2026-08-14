@@ -29,8 +29,26 @@ class RequestMetrics(BaseModel):
     total_errors_5xx: int
     error_rate_percent: float
     average_duration_ms: float
+    p50_duration_ms: float
+    p90_duration_ms: float
+    p95_duration_ms: float
+    p99_duration_ms: float
     bucket_counts: dict[str, int]
     uptime_seconds: float
+
+
+class SloStatus(BaseModel):
+    name: str
+    sli: str
+    actual_value: float
+    target_value: float
+    unit: str
+    compliant: bool
+    error_budget_consumed_percent: float | None = None
+
+
+class SloStatusListResponse(BaseModel):
+    slos: list[SloStatus]
 
 
 class DeviceStatusCounts(BaseModel):

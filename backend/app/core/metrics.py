@@ -1,5 +1,5 @@
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 
 # 28.10: a lightweight in-process counter store, not a Prometheus/
@@ -11,6 +11,12 @@ from dataclasses import dataclass, field
 # ever runs as more than one process, since these counters don't share
 # state across instances.
 
+# 77.6: average alone hides tail latency — a bounded reservoir of the
+# most recent durations is enough to compute real P50/P90/P95/P99
+# without storing every request ever made. 2000 samples is generous
+# for a single-instance deployment at this project's traffic scale.
+_DURATION_SAMPLE_SIZE = 2000
+
 
 @dataclass
 class _RequestMetrics:
@@ -18,6 +24,9 @@ class _RequestMetrics:
     errors_5xx: int = 0
     total_duration_ms: float = 0.0
     bucket_counts: dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    recent_durations_ms: deque = field(
+        default_factory=lambda: deque(maxlen=_DURATION_SAMPLE_SIZE)
+    )
 
 
 _request_metrics = _RequestMetrics()
@@ -32,6 +41,15 @@ def record_request(status_code: int, duration_ms: float, bucket: str) -> None:
 
     _request_metrics.total_duration_ms += duration_ms
     _request_metrics.bucket_counts[bucket] += 1
+    _request_metrics.recent_durations_ms.append(duration_ms)
+
+
+def _percentile(sorted_values: list[float], p: float) -> float:
+    if not sorted_values:
+        return 0.0
+
+    index = min(len(sorted_values) - 1, int(len(sorted_values) * p))
+    return sorted_values[index]
 
 
 def get_request_metrics_snapshot() -> dict:
@@ -39,11 +57,17 @@ def get_request_metrics_snapshot() -> dict:
     average_duration_ms = (_request_metrics.total_duration_ms / total) if total else 0.0
     error_rate_percent = (_request_metrics.errors_5xx / total * 100) if total else 0.0
 
+    sorted_durations = sorted(_request_metrics.recent_durations_ms)
+
     return {
         "total_requests": total,
         "total_errors_5xx": _request_metrics.errors_5xx,
         "error_rate_percent": round(error_rate_percent, 2),
         "average_duration_ms": round(average_duration_ms, 1),
+        "p50_duration_ms": round(_percentile(sorted_durations, 0.50), 1),
+        "p90_duration_ms": round(_percentile(sorted_durations, 0.90), 1),
+        "p95_duration_ms": round(_percentile(sorted_durations, 0.95), 1),
+        "p99_duration_ms": round(_percentile(sorted_durations, 0.99), 1),
         "bucket_counts": dict(_request_metrics.bucket_counts),
         "uptime_seconds": round(time.monotonic() - _started_at, 1),
     }

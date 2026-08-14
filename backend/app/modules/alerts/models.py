@@ -170,3 +170,32 @@ class AlertComment(Base):
     )
     comment: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+# On-call role tiers.
+ONCALL_PRIMARY = "PRIMARY"
+ONCALL_SECONDARY = "SECONDARY"
+
+
+class OnCallSchedule(Base):
+    """
+    STEP 77.61-77.63: EscalationPolicy (above) defines *what* happens on
+    escalation but nothing in this codebase ever tracked *who* is
+    actually on call right now — this is that missing piece. One row
+    per shift; app.modules.alerts.oncall.get_current_on_call(factory_id,
+    role) finds whichever row's window covers "now".
+    """
+
+    __tablename__ = "on_call_schedules"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    factory_id: Mapped[int] = mapped_column(
+        ForeignKey("factories.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default=ONCALL_PRIMARY)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

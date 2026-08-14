@@ -45,8 +45,14 @@ def create_command(
     priority: str = "MEDIUM",
     scheduled_at: datetime | None = None,
     expires_at: datetime | None = None,
+    trace_id: str | None = None,
 ) -> Command:
-    """38.7: Create a new command."""
+    """38.7: Create a new command. 77.12-77.14: trace_id defaults to a
+    fresh one (unchanged behavior) but a caller inside an HTTP request
+    should pass the request's own trace_id (request.state.trace_id,
+    app/core/middleware.py) instead, so a command created while
+    handling a request shows up under the same trace as the API call
+    that triggered it."""
     # Verify device belongs to factory
     device = db.query(Device).filter(Device.id == device_id, Device.factory_id == factory_id).first()
     if not device:
@@ -54,7 +60,7 @@ def create_command(
 
     now = datetime.now(timezone.utc)
     idempotency_key = f"cmd-{factory_id}-{device_id}-{uuid.uuid4().hex[:12]}"
-    trace_id = f"trace-{uuid.uuid4().hex[:16]}"
+    trace_id = trace_id or f"trace-{uuid.uuid4().hex[:16]}"
 
     # Default expiration: 4 hours from now
     if not expires_at:

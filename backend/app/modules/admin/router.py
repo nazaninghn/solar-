@@ -34,8 +34,16 @@ router = APIRouter(prefix="/api/v1/admin", tags=["Admin Panel"])
 
 
 def _require_platform_admin(current_user: User = Depends(get_current_user)) -> User:
-    """Ensure user is a platform admin."""
-    if current_user.role not in ("SUPER_ADMIN", "COMPANY_ADMIN"):
+    """
+    79.16-79.18: every endpoint in this router is platform-wide, not
+    organization-scoped (list every org, list every user, disable any
+    user, suspend any org) — SUPER_ADMIN only. COMPANY_ADMIN already
+    has its own organization-scoped equivalents under /api/v1/company;
+    allowing it here (as this previously did) let any company's own
+    admin see and modify every *other* company's data — a real
+    cross-tenant privilege escalation, not a scoping choice.
+    """
+    if current_user.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Platform admin access required.")
     return current_user
 

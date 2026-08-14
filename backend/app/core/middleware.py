@@ -41,6 +41,18 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         request_id = f"req_{uuid.uuid4().hex[:12]}"
         request.state.request_id = request_id
 
+        # 77.12-77.14: propagate an inbound trace if a caller already
+        # has one (a frontend that itself generates trace IDs, or a
+        # retried request), otherwise mint one in the same
+        # "trace-{16hex}" shape app.modules.orchestrator.service
+        # already uses for command creation — one trace_id format
+        # project-wide, not two. Any command created while handling
+        # this request reuses it (see create_command_endpoint), so an
+        # incident that touched both an API call and a device command
+        # can be found by the same ID.
+        trace_id = request.headers.get("X-Trace-ID") or f"trace-{uuid.uuid4().hex[:16]}"
+        request.state.trace_id = trace_id
+
         start = time.monotonic()
 
         try:
@@ -50,11 +62,12 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             record_request(500, duration_ms, "slow")
             logger.exception(
                 "%s %s status=500 duration_ms=%s bucket=slow request_id=%s "
-                "user_id=%s organization_id=%s (unhandled exception)",
+                "trace_id=%s user_id=%s organization_id=%s (unhandled exception)",
                 request.method,
                 request.url.path,
                 duration_ms,
                 request_id,
+                trace_id,
                 getattr(request.state, "user_id", None),
                 getattr(request.state, "organization_id", None),
             )
@@ -64,19 +77,21 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         bucket = _classify_duration(duration_ms)
         record_request(response.status_code, duration_ms, bucket)
         response.headers["X-Request-ID"] = request_id
+        response.headers["X-Trace-ID"] = trace_id
 
         log_level = logging.WARNING if bucket in ("warning", "slow") else logging.INFO
 
         logger.log(
             log_level,
             "%s %s status=%d duration_ms=%s bucket=%s request_id=%s "
-            "user_id=%s organization_id=%s",
+            "trace_id=%s user_id=%s organization_id=%s",
             request.method,
             request.url.path,
             response.status_code,
             duration_ms,
             bucket,
             request_id,
+            trace_id,
             getattr(request.state, "user_id", None),
             getattr(request.state, "organization_id", None),
         )

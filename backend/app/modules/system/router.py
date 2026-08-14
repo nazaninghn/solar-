@@ -7,6 +7,7 @@ from app.core.metrics import get_request_metrics_snapshot
 from app.database.session import get_db
 from app.devices.scenario import VALID_SCENARIOS, get_scenario, set_scenario
 from app.models.user import User
+from app.modules.observability.slo import compute_slo_status
 from app.modules.system.schemas import (
     ApiHealthStatus,
     DatabaseHealthStatus,
@@ -21,6 +22,7 @@ from app.modules.system.schemas import (
     ScenarioRequest,
     ScenarioResponse,
     SchedulerHealthStatus,
+    SloStatusListResponse,
     SystemHealthResponse,
     SystemMetricsResponse,
 )
@@ -90,6 +92,17 @@ def get_system_metrics(
             for name, stats in get_external_api_snapshot().items()
         },
     )
+
+
+@router.get("/slo", response_model=SloStatusListResponse)
+def get_slo_status(
+    _current_user: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """77.25-77.28: SLI/SLO/error-budget targets, computed against live
+    data rather than left as the static table in
+    docs/operations/observability-overview.md."""
+    return SloStatusListResponse(slos=compute_slo_status(db))
 
 
 @router.get("/health", response_model=SystemHealthResponse)

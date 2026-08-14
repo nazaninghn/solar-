@@ -74,3 +74,28 @@ class AlertSummaryResponse(BaseModel):
     medium: int
     unacknowledged: int
     active_incidents: int
+
+
+class OnCallShiftCreate(BaseModel):
+    user_id: int
+    role: str = "PRIMARY"
+    starts_at: datetime
+    ends_at: datetime
+
+
+class OnCallShiftResponse(BaseModel):
+    id: int
+    factory_id: int
+    user_id: int
+    role: str
+    starts_at: datetime
+    ends_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class CurrentOnCallResponse(BaseModel):
+    role: str
+    user_id: int | None
+    user_name: str | None
+    user_email: str | None

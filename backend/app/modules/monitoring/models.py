@@ -97,3 +97,29 @@ class IncidentPostmortem(Base):
     preventive_actions: Mapped[str | None] = mapped_column(Text, nullable=True)
     owner: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# STEP 77.66-77.68: the table above existed with no workflow around it
+# — no way to create/update one, and "preventive_actions" was a single
+# free-text blob with no owner/deadline/status to actually track. This
+# is the missing corrective-action tracking, one row per action item
+# rather than one paragraph covering all of them.
+CORRECTIVE_ACTION_STATUSES = ("OPEN", "IN_PROGRESS", "DONE")
+
+
+class PostmortemCorrectiveAction(Base):
+    __tablename__ = "postmortem_corrective_actions"
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    postmortem_id: Mapped[int] = mapped_column(
+        ForeignKey("incident_postmortems.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    # Free-text, matching IncidentPostmortem.owner's own shape above —
+    # not every "owner" of a corrective action is necessarily a user
+    # account in this system (could be "Platform Team", a vendor, etc).
+    owner: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    priority: Mapped[str] = mapped_column(String(20), nullable=False, default="MEDIUM")
+    deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="OPEN")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

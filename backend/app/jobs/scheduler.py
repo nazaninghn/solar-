@@ -27,10 +27,12 @@ def register_all_jobs() -> None:
     from app.jobs.device_health_jobs import register_device_health_jobs
     from app.jobs.escalation_jobs import register_escalation_jobs
     from app.jobs.financial_jobs import register_financial_jobs
+    from app.jobs.observability_jobs import register_observability_jobs
     from app.jobs.pricing_jobs import register_pricing_jobs
     from app.jobs.recommendation_expiry_jobs import register_recommendation_expiry_jobs
     from app.jobs.recommendation_jobs import register_recommendation_jobs
     from app.jobs.retention_jobs import register_retention_jobs
+    from app.jobs.security_jobs import register_security_jobs
     from app.jobs.solar_forecast_jobs import register_solar_forecast_jobs
 
     # Step 25: weather_jobs.update_weather and forecast_jobs.update_solar_
@@ -50,6 +52,8 @@ def register_all_jobs() -> None:
     register_retention_jobs()
     register_escalation_jobs()
     register_daily_summary_jobs()
+    register_observability_jobs()
+    register_security_jobs()
 
 
 def start_scheduler() -> None:

@@ -1,6 +1,6 @@
 """STEP 38.33-38.34: Control Center API."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_permission
@@ -52,6 +52,7 @@ def get_commands(
 @router.post("/commands", response_model=CommandResponse, status_code=201)
 def create_command_endpoint(
     data: CommandCreateRequest,
+    request: Request,
     factory: Factory = Depends(get_accessible_factory),
     current_user: User = Depends(require_permission(MANAGE_ENERGY)),
     db: Session = Depends(get_db),
@@ -68,6 +69,7 @@ def create_command_endpoint(
         priority=data.priority,
         scheduled_at=data.scheduled_at,
         expires_at=data.expires_at,
+        trace_id=getattr(request.state, "trace_id", None),
     )
 
 

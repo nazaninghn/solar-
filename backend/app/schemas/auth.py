@@ -42,3 +42,7 @@ class VerifyEmailRequest(BaseModel):
 
 class ResendVerificationRequest(BaseModel):
     email: EmailStr
+
+
+class AccountDeletionRequest(BaseModel):
+    password: str

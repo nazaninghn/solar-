@@ -140,6 +140,16 @@ class Settings:
         "",
     )
 
+    # 77.53: synthetic monitoring makes a real outbound HTTP request
+    # back to this same process (not an in-process function call) so it
+    # catches "not accepting connections" failures an internal check
+    # never would. Defaults to the local dev port; Render deployments
+    # should set this to the service's own public URL.
+    SYNTHETIC_MONITORING_BASE_URL: str = os.getenv(
+        "SYNTHETIC_MONITORING_BASE_URL",
+        "http://localhost:8000",
+    )
+
     # Defaults to Open-Meteo (no API key required) so Step 8 is testable
     # without a paid provider account. Swapping providers later only
     # means changing this URL/client, not the rest of the app.

@@ -5,7 +5,15 @@ from app.auth.rate_limit import enforce_login_rate_limit
 from app.core.dependencies import get_current_user
 from app.database.session import get_db
 from app.models.user import User
+from app.modules.auth.data_rights import (
+    IdentityVerificationError,
+    LastAdminError,
+    LegalHoldBlockError,
+    delete_own_account,
+    export_own_data,
+)
 from app.schemas.auth import (
+    AccountDeletionRequest,
     ForgotPasswordRequest,
     LoginRequest,
     LogoutRequest,
@@ -203,3 +211,33 @@ def me(current_user: User = Depends(get_current_user)):
             "name": current_user.organization.name,
         },
     }
+
+
+@router.get("/me/export")
+def export_my_data(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """79.36, 79.38: self-service data export — everything tied to this
+    user_id specifically, not a full company/factory data dump."""
+    return export_own_data(db, current_user)
+
+
+@router.post("/me/delete", status_code=status.HTTP_204_NO_CONTENT)
+def delete_my_account(
+    data: AccountDeletionRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """79.37, 79.39-79.40: anonymize + deactivate this account. Requires
+    re-entering the password (identity verification) since this is a
+    destructive action reachable by anyone already holding a valid
+    access token, not just the account owner mid-session."""
+    try:
+        delete_own_account(db, current_user, data.password)
+    except IdentityVerificationError as error:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(error))
+    except LastAdminError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error))
+    except LegalHoldBlockError as error:
+        raise HTTPException(status_code=status.HTTP_423_LOCKED, detail=str(error))

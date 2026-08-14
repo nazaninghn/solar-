@@ -9,6 +9,7 @@ from app.jobs.common import finish_job_run, start_job_run
 from app.jobs.scheduler import scheduler
 from app.models.factory import Factory
 from app.models.notification import Notification
+from app.modules.alerts.oncall import get_current_on_call
 from app.modules.notifications.service import create_notification
 
 logger = logging.getLogger(__name__)
@@ -67,6 +68,15 @@ def _escalate(db, notification: Notification) -> None:
         candidates = [
             u for u in users_with_access if u.role in ("COMPANY_ADMIN", "SUPER_ADMIN")
         ]
+
+    # 77.61-77.63: whoever's on the current on-call shift gets notified
+    # too, in addition to (not instead of) the role-based candidates
+    # above — an on-call schedule doesn't replace the role fallback,
+    # since a factory with no schedule configured shouldn't lose
+    # escalation coverage entirely.
+    on_call_user = get_current_on_call(db, factory.id)
+    if on_call_user and on_call_user not in candidates:
+        candidates.append(on_call_user)
 
     for user in candidates:
         create_notification(
