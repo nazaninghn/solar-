@@ -45,6 +45,7 @@ from app.modules.events.router import notif_router as events_notif_router
 from app.modules.billing.router import billing_router, settlement_router
 from app.modules.advanced_analytics.router import router as analytics_v2_router
 from app.modules.admin.router import router as admin_router
+from app.modules.ai_readiness.router import router as ai_readiness_router
 from app.modules.bi.router import router as bi_router
 from app.modules.compliance.router import router as compliance_router
 from app.modules.finops.router import router as finops_router
@@ -129,6 +130,7 @@ app.include_router(billing_router)
 app.include_router(settlement_router)
 app.include_router(analytics_v2_router)
 app.include_router(admin_router)
+app.include_router(ai_readiness_router)
 app.include_router(bi_router)
 app.include_router(compliance_router)
 app.include_router(finops_router)
