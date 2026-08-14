@@ -38,6 +38,11 @@ class RecoveryDrill(Base):
     __tablename__ = "recovery_drills"
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     scenario: Mapped[str] = mapped_column(String(100), nullable=False)
+    # 83: which RecoveryTarget.service this drill's RTO/RPO should be
+    # evaluated against — without this, completing a drill had no way
+    # to know whether a "Billing" scenario should be checked against
+    # billing's 15min/1hr target or database's 1hr/1hr one.
+    target_service: Mapped[str] = mapped_column(String(50), nullable=False, default="Database")
     environment: Mapped[str] = mapped_column(String(20), nullable=False, default="staging")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="PLANNED")
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

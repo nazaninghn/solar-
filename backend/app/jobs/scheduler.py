@@ -27,6 +27,7 @@ def register_all_jobs() -> None:
     from app.jobs.bi_jobs import register_bi_jobs
     from app.jobs.daily_summary_jobs import register_daily_summary_jobs
     from app.jobs.device_health_jobs import register_device_health_jobs
+    from app.jobs.disaster_recovery_jobs import register_disaster_recovery_jobs
     from app.jobs.escalation_jobs import register_escalation_jobs
     from app.jobs.financial_jobs import register_financial_jobs
     from app.jobs.finops_jobs import register_finops_jobs
@@ -60,6 +61,7 @@ def register_all_jobs() -> None:
     register_finops_jobs()
     register_bi_jobs()
     register_ai_readiness_jobs()
+    register_disaster_recovery_jobs()
 
 
 def start_scheduler() -> None:
