@@ -32,6 +32,7 @@ from app.modules.control.router import router as control_router
 from app.modules.gateway.router import router as gateway_router
 from app.modules.pipeline.router import router as pipeline_router
 from app.modules.forecasting.router import router as forecasting_router
+from app.modules.optimization.router import router as optimization_router
 from app.realtime.router import router as realtime_router
 
 configure_logging()
@@ -94,6 +95,7 @@ app.include_router(control_router)
 app.include_router(gateway_router)
 app.include_router(pipeline_router)
 app.include_router(forecasting_router)
+app.include_router(optimization_router)
 
 
 @app.get("/")
