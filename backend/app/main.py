@@ -46,6 +46,7 @@ from app.modules.billing.router import billing_router, settlement_router
 from app.modules.advanced_analytics.router import router as analytics_v2_router
 from app.modules.admin.router import router as admin_router
 from app.modules.compliance.router import router as compliance_router
+from app.modules.finops.router import router as finops_router
 from app.modules.security.router import router as security_router
 from app.modules.monitoring.router import router as monitoring_router
 from app.modules.data_integrity.router import router as data_integrity_router
@@ -128,6 +129,7 @@ app.include_router(settlement_router)
 app.include_router(analytics_v2_router)
 app.include_router(admin_router)
 app.include_router(compliance_router)
+app.include_router(finops_router)
 app.include_router(security_router)
 app.include_router(monitoring_router)
 app.include_router(data_integrity_router)

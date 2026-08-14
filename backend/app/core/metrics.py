@@ -71,3 +71,48 @@ def get_request_metrics_snapshot() -> dict:
         "bucket_counts": dict(_request_metrics.bucket_counts),
         "uptime_seconds": round(time.monotonic() - _started_at, 1),
     }
+
+
+# 78: per-organization usage, for APIUsageMetric (app/modules/admin/
+# models.py, Step 46) — that table existed with no writer, same shape
+# as SystemMetricSnapshot before Step 77. Keyed by (organization_id,
+# endpoint, method) with endpoint as the ROUTE TEMPLATE
+# ("/api/v1/factories/{factory_id}/devices"), not the raw path with
+# real IDs substituted in — using the raw path would make this an
+# unbounded-cardinality key set (77.72's cardinality-control concern),
+# growing one bucket per distinct factory/device/etc ever requested
+# instead of one per actual endpoint.
+@dataclass
+class _OrgEndpointStats:
+    request_count: int = 0
+    error_count: int = 0
+    total_duration_ms: float = 0.0
+
+
+_org_endpoint_metrics: dict[tuple[int, str, str], _OrgEndpointStats] = defaultdict(
+    _OrgEndpointStats
+)
+
+
+def record_org_request(
+    organization_id: int | None, endpoint: str, method: str, status_code: int, duration_ms: float
+) -> None:
+    if organization_id is None:
+        return
+
+    stats = _org_endpoint_metrics[(organization_id, endpoint, method)]
+    stats.request_count += 1
+    if status_code >= 500:
+        stats.error_count += 1
+    stats.total_duration_ms += duration_ms
+
+
+def flush_and_reset_org_metrics() -> dict[tuple[int, str, str], _OrgEndpointStats]:
+    """Called by the periodic flush job (app/jobs/finops_jobs.py) to get
+    everything accumulated since the last flush and clear the buckets —
+    the DB row this becomes owns the period_start/period_end, the
+    in-memory dict doesn't need to remember old periods too."""
+    global _org_endpoint_metrics
+    snapshot = _org_endpoint_metrics
+    _org_endpoint_metrics = defaultdict(_OrgEndpointStats)
+    return snapshot

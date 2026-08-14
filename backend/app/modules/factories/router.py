@@ -10,6 +10,7 @@ from app.core.dependencies import get_accessible_factory, get_current_user
 from app.database.session import get_db
 from app.models.factory import Factory
 from app.models.user import User
+from app.modules.performance.quota_enforcement import enforce_factory_quota
 from app.schemas.factory import FactoryCreate, FactoryResponse, FactoryUpdate
 
 router = APIRouter(
@@ -47,6 +48,11 @@ def create_factory(
     current_user: User = Depends(require_permission(MANAGE_FACTORY_SETTINGS)),
     db: Session = Depends(get_db),
 ):
+    # 78: TenantQuota's enforcement functions (app/modules/performance/
+    # quota_enforcement.py, Step 51) existed with no call site anywhere
+    # — quotas were advisory schema only. This is the actual gate.
+    enforce_factory_quota(db, current_user.organization_id)
+
     factory = Factory(
         organization_id=current_user.organization_id,
         **data.model_dump(exclude_unset=True),

@@ -11,6 +11,7 @@ from app.devices.rate_limit import enforce_telemetry_rate_limit
 from app.models.device import Device
 from app.models.factory import Factory
 from app.models.user import User
+from app.modules.performance.quota_enforcement import enforce_device_quota
 from app.modules.devices.schemas import (
     DeviceCreate,
     DeviceCreatedResponse,
@@ -57,6 +58,8 @@ def create_device_endpoint(
     _permission_check: User = Depends(require_permission(MANAGE_ENERGY)),
     db: Session = Depends(get_db),
 ):
+    enforce_device_quota(db, factory.organization_id)
+
     device, raw_key = create_device(db=db, factory_id=factory.id, data=data)
 
     return DeviceCreatedResponse(

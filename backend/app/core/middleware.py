@@ -5,7 +5,7 @@ import uuid
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
-from app.core.metrics import record_request
+from app.core.metrics import record_org_request, record_request
 
 logger = logging.getLogger("app.request")
 
@@ -78,6 +78,21 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         record_request(response.status_code, duration_ms, bucket)
         response.headers["X-Request-ID"] = request_id
         response.headers["X-Trace-ID"] = trace_id
+
+        # 78: route TEMPLATE, not the raw path — request.scope["route"]
+        # is only populated once Starlette has matched a route, which
+        # happens inside call_next() above; a 404 (no match) has none,
+        # and record_org_request no-ops anyway when organization_id is
+        # None (no authenticated caller to attribute usage to).
+        route = request.scope.get("route")
+        endpoint_template = route.path if route else request.url.path
+        record_org_request(
+            getattr(request.state, "organization_id", None),
+            endpoint_template,
+            request.method,
+            response.status_code,
+            duration_ms,
+        )
 
         log_level = logging.WARNING if bucket in ("warning", "slow") else logging.INFO
 

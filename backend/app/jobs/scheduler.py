@@ -27,6 +27,7 @@ def register_all_jobs() -> None:
     from app.jobs.device_health_jobs import register_device_health_jobs
     from app.jobs.escalation_jobs import register_escalation_jobs
     from app.jobs.financial_jobs import register_financial_jobs
+    from app.jobs.finops_jobs import register_finops_jobs
     from app.jobs.observability_jobs import register_observability_jobs
     from app.jobs.pricing_jobs import register_pricing_jobs
     from app.jobs.recommendation_expiry_jobs import register_recommendation_expiry_jobs
@@ -54,6 +55,7 @@ def register_all_jobs() -> None:
     register_daily_summary_jobs()
     register_observability_jobs()
     register_security_jobs()
+    register_finops_jobs()
 
 
 def start_scheduler() -> None:

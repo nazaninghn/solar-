@@ -8,6 +8,7 @@ from app.core.dependencies import get_current_user
 from app.database.session import get_db
 from app.models.factory import Factory
 from app.models.user import User
+from app.modules.performance.quota_enforcement import enforce_user_quota
 from app.modules.company.schemas import (
     AuditLogResponse,
     CompanyUserCreate,
@@ -95,6 +96,8 @@ def create_user(
     current_user: User = Depends(require_permission(MANAGE_USERS)),
     db: Session = Depends(get_db),
 ):
+    enforce_user_quota(db, current_user.organization_id)
+
     try:
         user = create_company_user(db, current_user.organization_id, data)
     except ValueError as error:

@@ -27,6 +27,7 @@ from app.modules.data_integrity import models as _data_integrity_models  # noqa:
 from app.modules.disaster_recovery import models as _disaster_recovery_models  # noqa: F401
 from app.modules.events import models as _events_models  # noqa: F401
 from app.modules.finance import models as _finance_models  # noqa: F401
+from app.modules.finops import models as _finops_models  # noqa: F401
 from app.modules.forecasting import models as _forecasting_models  # noqa: F401
 from app.modules.gateway import models as _gateway_models  # noqa: F401
 from app.modules.iot_gateway import models as _iot_gateway_models  # noqa: F401

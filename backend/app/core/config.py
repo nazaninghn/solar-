@@ -150,6 +150,16 @@ class Settings:
         "http://localhost:8000",
     )
 
+    # 78: the Postgres plan's storage ceiling — not enforced by this
+    # codebase (Render enforces the actual limit), just the reference
+    # point CapacityMetric compares current usage against so "storage
+    # at 40% of plan" is a real number instead of an unbounded one.
+    # Default matches Render's starter Postgres tier; override per
+    # environment via env var once the real plan is known.
+    DATABASE_STORAGE_CAPACITY_GB: float = float(
+        os.getenv("DATABASE_STORAGE_CAPACITY_GB", "10")
+    )
+
     # Defaults to Open-Meteo (no API key required) so Step 8 is testable
     # without a paid provider account. Swapping providers later only
     # means changing this URL/client, not the rest of the app.
