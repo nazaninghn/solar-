@@ -78,7 +78,15 @@ def flush_api_usage_metrics() -> None:
 def snapshot_capacity_metrics() -> None:
     """78: CapacityMetric (Step 51) existed with no writer either — real
     measurements against the thresholds already defined on the table's
-    warning_threshold/critical_threshold columns."""
+    warning_threshold/critical_threshold columns.
+
+    84 fix: pool_capacity previously used pool_stats["overflow"], which
+    is SQLAlchemy's `checked_out - pool_size` (see get_database_pool_
+    stats's docstring) — not the configured overflow ceiling. That made
+    current_capacity collapse to ~=checked_out, so every snapshot ever
+    taken read as "100% full" regardless of real headroom, and Step 84's
+    new alerting job (which finally checks these thresholds for the
+    first time) opened a false CRITICAL incident from it immediately."""
     db = SessionLocal()
     job_run = start_job_run(db, "snapshot_capacity_metrics")
 
@@ -87,7 +95,7 @@ def snapshot_capacity_metrics() -> None:
         pool_stats = get_database_pool_stats()
         table_sizes = get_table_sizes_bytes(db)
 
-        pool_capacity = float(pool_stats["pool_size"] + pool_stats["overflow"])
+        pool_capacity = float(pool_stats["pool_size"] + pool_stats["max_overflow"])
         db.add(
             CapacityMetric(
                 metric="database_connections",
@@ -118,7 +126,7 @@ def snapshot_capacity_metrics() -> None:
         logger.info(
             "snapshotted capacity metrics: db_connections=%s/%s storage=%.1fMB",
             pool_stats["checked_out"],
-            pool_stats["pool_size"] + pool_stats["overflow"],
+            pool_capacity,
             total_storage_bytes / 1024 / 1024,
         )
 

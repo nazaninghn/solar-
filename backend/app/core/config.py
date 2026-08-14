@@ -76,6 +76,34 @@ class Settings:
         )
     )
 
+    # 84: previously unset, so SQLAlchemy's own defaults applied
+    # silently (pool_size=5, max_overflow=10, pool_timeout=30,
+    # pool_recycle=-1/never). Made explicit and configurable so a real
+    # capacity decision under load doesn't require a code change —
+    # only tuning these actually changes what CapacityMetric's
+    # pool_capacity (app/jobs/finops_jobs.py) measures against, since
+    # it reads pool.size()/pool.overflow() from the live engine.
+    #
+    # The default below (20/30, not SQLAlchemy's 5/10) is not a guess —
+    # docs/operations/performance-scalability-report.md's load test
+    # measured pool=5/10 producing 6-23% error rates and P95 latency
+    # up to 59s at 50-150 concurrent dashboard reads, purely from
+    # requests queueing for a connection. Raising to 20/30 eliminated
+    # ALL errors and cut P95 by 14-16x at the same load, on this same
+    # single Postgres instance. Verify against the actual Render
+    # Postgres plan's max_connections before deploying — this default
+    # assumes headroom for at least ~30 connections from this service
+    # alone, which a Starter-tier-or-above Render Postgres plan has,
+    # but a free-tier instance may not.
+    DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "20"))
+    DB_MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", "30"))
+    DB_POOL_TIMEOUT_SECONDS: int = int(os.getenv("DB_POOL_TIMEOUT_SECONDS", "30"))
+    # Postgres (and most managed providers, Render included) can drop a
+    # connection that's been idle too long on their side without
+    # SQLAlchemy knowing until the next checkout fails; recycling
+    # proactively avoids surfacing that as a request-time error.
+    DB_POOL_RECYCLE_SECONDS: int = int(os.getenv("DB_POOL_RECYCLE_SECONDS", "1800"))
+
     # 27.17: comma-separated list, e.g.
     # "https://app.solarflow.com,https://staging.solarflow.com" — no
     # wildcard default, so a misconfigured production deploy fails

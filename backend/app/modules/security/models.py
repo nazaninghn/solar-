@@ -31,7 +31,13 @@ class SecurityEvent(Base):
     user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # 84: the Step 79 correlation job (every 5 min, now actually
+    # populated with real data since Step 82 wired log_security_event
+    # into real call sites) does `WHERE created_at >= window_start` over
+    # this whole table on every run — needed its own index rather than
+    # relying on the individual event_type/user_id/organization_id ones,
+    # none of which help a bare time-range scan.
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
 
 
 class AccountLockout(Base):

@@ -1,6 +1,7 @@
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.external_api_metrics import get_external_api_snapshot
 from app.core.metrics import get_request_metrics_snapshot
 from app.database.session import engine
@@ -49,7 +50,19 @@ def get_device_status_counts(db: Session) -> dict:
 
 def get_database_pool_stats() -> dict:
     """28.14: connection pool usage, not query-level detail — that's
-    db_monitoring.py's slow-query logging instead."""
+    db_monitoring.py's slow-query logging instead.
+
+    84 fix: SQLAlchemy's `pool.overflow()` returns `checked_out -
+    pool_size` (negative when idle, i.e. "how far below the overflow
+    line we are"), NOT the configured max_overflow ceiling — despite
+    the name. finops_jobs.py's snapshot_capacity_metrics computed
+    `pool_size + overflow` intending "the total connection ceiling",
+    but that expression algebraically collapses to just `checked_out`
+    regardless of pool_size, which is why every CapacityMetric snapshot
+    ever taken showed current_value == current_capacity (reported as
+    "100% full") no matter how much headroom actually existed. Exposes
+    the real configured ceiling (settings.DB_MAX_OVERFLOW) instead.
+    """
     pool = engine.pool
 
     return {
@@ -57,6 +70,7 @@ def get_database_pool_stats() -> dict:
         "checked_out": pool.checkedout(),
         "checked_in": pool.checkedin(),
         "overflow": pool.overflow(),
+        "max_overflow": settings.DB_MAX_OVERFLOW,
     }
 
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -15,6 +15,15 @@ class AuditLog(Base):
     """
 
     __tablename__ = "audit_logs"
+
+    __table_args__ = (
+        # 84: company/service.py's list_audit_log (the company audit-log
+        # page) always filters by organization_id then orders by
+        # created_at DESC — the individual organization_id index alone
+        # still forces a sort over every matching row; this composite
+        # lets Postgres walk the index in the right order directly.
+        Index("ix_audit_logs_org_created_at", "organization_id", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
