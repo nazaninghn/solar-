@@ -41,6 +41,7 @@ from app.modules.observability.router import router as observability_router
 from app.modules.observability.router import factory_router as observability_factory_router
 from app.modules.events.router import alert_router as events_alert_router
 from app.modules.events.router import notif_router as events_notif_router
+from app.modules.billing.router import billing_router, settlement_router
 from app.realtime.router import router as realtime_router
 
 configure_logging()
@@ -112,6 +113,8 @@ app.include_router(observability_router)
 app.include_router(observability_factory_router)
 app.include_router(events_alert_router)
 app.include_router(events_notif_router)
+app.include_router(billing_router)
+app.include_router(settlement_router)
 
 
 @app.get("/")
