@@ -2,8 +2,11 @@
 
 import { motion } from "framer-motion";
 import { Sparkles, ArrowRight } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function AIInsightBanner() {
+  const { t } = useLanguage();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -21,7 +24,7 @@ export default function AIInsightBanner() {
 
         <div className="flex-1">
           <p className="text-xs font-semibold text-lime uppercase tracking-widest mb-2">
-            AI Insight
+            {t.dashboard.aiInsight}
           </p>
           <h2 className="text-lg sm:text-xl font-semibold text-white leading-snug max-w-3xl">
             Solar production is outpacing consumption by{" "}
@@ -37,7 +40,7 @@ export default function AIInsightBanner() {
           href="#recommendations"
           className="inline-flex items-center gap-2 self-start lg:self-center shrink-0 px-5 py-3 rounded-full bg-lime text-ink text-sm font-semibold hover:bg-lime/90 transition-colors"
         >
-          View Full Analysis
+          {t.dashboard.viewAnalysis}
           <ArrowRight size={15} />
         </a>
       </div>

@@ -2,30 +2,7 @@
 
 import { motion } from "framer-motion";
 import { BatteryCharging, ShoppingCart, ArrowRightLeft } from "lucide-react";
-
-const items = [
-  {
-    icon: BatteryCharging,
-    question: "Should we charge batteries?",
-    answer: "Yes",
-    tone: "positive",
-    reason: "Solar surplus + low grid price right now. Charging saves an estimated €45 today.",
-  },
-  {
-    icon: ShoppingCart,
-    question: "Should we buy electricity?",
-    answer: "No",
-    tone: "neutral",
-    reason: "Solar and battery coverage is sufficient for the next 4 hours of demand.",
-  },
-  {
-    icon: ArrowRightLeft,
-    question: "Should we sell electricity?",
-    answer: "Yes",
-    tone: "positive",
-    reason: "Price peaks at 18:00 — selling 120 kWh of surplus is worth ~€22.",
-  },
-];
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const toneStyles: Record<string, { badge: string; iconBg: string; iconColor: string }> = {
   positive: {
@@ -41,13 +18,39 @@ const toneStyles: Record<string, { badge: string; iconBg: string; iconColor: str
 };
 
 export default function RecommendationCard() {
+  const { t } = useLanguage();
+
+  const items = [
+    {
+      icon: BatteryCharging,
+      question: t.dashboard.chargeBattery,
+      answer: t.dashboard.yes,
+      tone: "positive",
+      reason: t.dashboard.chargeReason,
+    },
+    {
+      icon: ShoppingCart,
+      question: t.dashboard.buyElectricity,
+      answer: t.dashboard.no,
+      tone: "neutral",
+      reason: t.dashboard.buyReason,
+    },
+    {
+      icon: ArrowRightLeft,
+      question: t.dashboard.sellElectricity,
+      answer: t.dashboard.yes,
+      tone: "positive",
+      reason: t.dashboard.sellReason,
+    },
+  ];
+
   return (
     <div id="recommendations">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-ink tracking-tight">
-          What should we do right now?
+          {t.dashboard.whatToDo}
         </h2>
-        <p className="text-xs text-gray-400">Updated 2 minutes ago</p>
+        <p className="text-xs text-gray-400">{t.dashboard.updatedAgo}</p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-5">

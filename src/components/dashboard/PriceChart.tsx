@@ -11,6 +11,7 @@ import {
   Tooltip,
   ReferenceLine,
 } from "recharts";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const priceData = [
   { hour: "00", price: 0.14 },
@@ -30,6 +31,8 @@ const priceData = [
 const avg = priceData.reduce((s, d) => s + d.price, 0) / priceData.length;
 
 export default function PriceChart() {
+  const { t } = useLanguage();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -39,12 +42,12 @@ export default function PriceChart() {
     >
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h3 className="text-base font-semibold text-ink">Electricity Price Today</h3>
-          <p className="text-xs text-gray-400 mt-0.5">€/kWh · day-ahead market</p>
+          <h3 className="text-base font-semibold text-ink">{t.dashboard.priceChart.title}</h3>
+          <p className="text-xs text-gray-400 mt-0.5">{t.dashboard.priceChart.subtitle}</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-danger/10">
           <span className="w-2 h-2 rounded-full bg-danger" />
-          <span className="text-xs font-semibold text-danger">Best sell window: 18:00–19:00</span>
+          <span className="text-xs font-semibold text-danger">{t.dashboard.priceChart.sellWindow}</span>
         </div>
       </div>
 

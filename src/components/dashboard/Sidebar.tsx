@@ -15,19 +15,22 @@ import {
   ArrowLeft,
   X,
 } from "lucide-react";
-
-const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { label: "Forecast", href: "/dashboard/forecast", icon: CloudSun },
-  { label: "AI Recommendations", href: "/dashboard/recommendations", icon: Sparkles },
-  { label: "Battery Storage", href: "/dashboard/battery", icon: Battery },
-  { label: "Billing & Savings", href: "/dashboard/billing", icon: Receipt },
-  { label: "Reports", href: "/dashboard/reports", icon: FileText },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings },
-];
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 function SidebarContent({ pathname }: { pathname: string }) {
+  const { t } = useLanguage();
+
+  const navItems = [
+    { label: t.dashboard.sidebar.dashboard, href: "/dashboard", icon: LayoutDashboard },
+    { label: t.dashboard.sidebar.analytics, href: "/dashboard/analytics", icon: BarChart3 },
+    { label: t.dashboard.sidebar.forecast, href: "/dashboard/forecast", icon: CloudSun },
+    { label: t.dashboard.sidebar.recommendations, href: "/dashboard/recommendations", icon: Sparkles },
+    { label: t.dashboard.sidebar.battery, href: "/dashboard/battery", icon: Battery },
+    { label: t.dashboard.sidebar.billing, href: "/dashboard/billing", icon: Receipt },
+    { label: t.dashboard.sidebar.reports, href: "/dashboard/reports", icon: FileText },
+    { label: t.dashboard.sidebar.settings, href: "/dashboard/settings", icon: Settings },
+  ];
+
   return (
     <div className="flex flex-col h-full bg-ink text-white">
       <Link href="/" className="flex items-center gap-2.5 px-6 py-6">
@@ -47,7 +50,7 @@ function SidebarContent({ pathname }: { pathname: string }) {
           const active = item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href);
           return (
             <Link
-              key={item.label}
+              key={item.href}
               href={item.href}
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                 active
@@ -68,7 +71,7 @@ function SidebarContent({ pathname }: { pathname: string }) {
           className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:text-white hover:bg-white/5 transition-colors"
         >
           <ArrowLeft size={18} />
-          Back to Website
+          {t.dashboard.sidebar.backToWebsite}
         </Link>
         <div className="mt-2 flex items-center gap-3 px-3.5 py-3 rounded-xl bg-white/5">
           <div className="w-9 h-9 rounded-full bg-lime/20 flex items-center justify-center text-sm font-bold text-lime shrink-0">

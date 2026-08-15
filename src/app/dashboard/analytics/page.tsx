@@ -7,6 +7,7 @@ import {
   ResponsiveContainer, Tooltip, Legend,
 } from "recharts";
 import { Sun, Zap, Battery, TrendingUp, TrendingDown, Activity } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
@@ -21,6 +22,7 @@ interface EnergyReading {
 export default function AnalyticsPage() {
   const [data, setData] = useState<EnergyReading[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     async function load() {
@@ -72,12 +74,12 @@ export default function AnalyticsPage() {
   }));
 
   const kpis = [
-    { label: "Solar Generation", value: `${(totalSolar / 1000).toFixed(1)} MWh`, icon: Sun, color: "text-lime-dark", bg: "bg-lime/10" },
-    { label: "Total Consumption", value: `${(totalConsumption / 1000).toFixed(1)} MWh`, icon: Zap, color: "text-royal", bg: "bg-royal/10" },
-    { label: "Solar Coverage", value: `${solarCoverage.toFixed(1)}%`, icon: TrendingUp, color: "text-primary-green", bg: "bg-primary-green/10" },
-    { label: "Grid Dependency", value: `${gridDependency.toFixed(1)}%`, icon: TrendingDown, color: "text-energy-orange", bg: "bg-energy-orange/10" },
-    { label: "Grid Export", value: `${(totalExport / 1000).toFixed(1)} MWh`, icon: Battery, color: "text-azure", bg: "bg-azure/10" },
-    { label: "Data Points", value: `${data.length}`, icon: Activity, color: "text-gray-500", bg: "bg-gray-100" },
+    { label: t.dashboard.analytics.solarGeneration, value: `${(totalSolar / 1000).toFixed(1)} MWh`, icon: Sun, color: "text-lime-dark", bg: "bg-lime/10" },
+    { label: t.dashboard.analytics.totalConsumption, value: `${(totalConsumption / 1000).toFixed(1)} MWh`, icon: Zap, color: "text-royal", bg: "bg-royal/10" },
+    { label: t.dashboard.analytics.solarCoverage, value: `${solarCoverage.toFixed(1)}%`, icon: TrendingUp, color: "text-primary-green", bg: "bg-primary-green/10" },
+    { label: t.dashboard.analytics.gridDependency, value: `${gridDependency.toFixed(1)}%`, icon: TrendingDown, color: "text-energy-orange", bg: "bg-energy-orange/10" },
+    { label: t.dashboard.analytics.gridExport, value: `${(totalExport / 1000).toFixed(1)} MWh`, icon: Battery, color: "text-azure", bg: "bg-azure/10" },
+    { label: t.dashboard.analytics.dataPoints, value: `${data.length}`, icon: Activity, color: "text-gray-500", bg: "bg-gray-100" },
   ];
 
   if (loading) {
@@ -91,8 +93,8 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-ink">Energy Analytics</h1>
-        <p className="text-sm text-gray-500 mt-1">Istanbul Solar Factory — Last 7 days</p>
+        <h1 className="text-2xl font-bold text-ink">{t.dashboard.analytics.title}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t.dashboard.analytics.subtitle}</p>
       </div>
 
       {/* KPIs */}
@@ -115,8 +117,8 @@ export default function AnalyticsPage() {
 
       {/* Hourly Chart */}
       <div className="bg-white rounded-2xl p-6 border border-gray-100">
-        <h3 className="text-sm font-semibold text-ink mb-1">Hourly Production vs Consumption</h3>
-        <p className="text-xs text-gray-400 mb-4">Last 24 hours</p>
+        <h3 className="text-sm font-semibold text-ink mb-1">{t.dashboard.analytics.hourlyChart}</h3>
+        <p className="text-xs text-gray-400 mb-4">{t.dashboard.analytics.last24h}</p>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
@@ -144,8 +146,8 @@ export default function AnalyticsPage() {
 
       {/* Daily Bar Chart */}
       <div className="bg-white rounded-2xl p-6 border border-gray-100">
-        <h3 className="text-sm font-semibold text-ink mb-1">Daily Energy Summary</h3>
-        <p className="text-xs text-gray-400 mb-4">Last 7 days</p>
+        <h3 className="text-sm font-semibold text-ink mb-1">{t.dashboard.analytics.dailySummary}</h3>
+        <p className="text-xs text-gray-400 mb-4">{t.dashboard.analytics.last7days}</p>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={dailyData} barGap={2}>

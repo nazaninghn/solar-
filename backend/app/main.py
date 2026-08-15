@@ -1,4 +1,5 @@
 import asyncio
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
@@ -34,6 +35,7 @@ from app.modules.devices.router import router as devices_router
 from app.modules.disaster_recovery.router import router as dr_router
 from app.modules.energy.router import router as energy_router
 from app.modules.events.router import alert_router as events_alert_router
+from app.integrations.huawei.router import router as huawei_router
 from app.modules.events.router import notif_router as events_notif_router
 from app.modules.factories.router import router as factories_router
 from app.modules.finance.router import router as finance_router
@@ -67,11 +69,16 @@ configure_error_tracking()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    start_scheduler()
-    device_polling_task = asyncio.create_task(run_device_polling_loop())
+    # Skip background scheduler in dev to avoid overwhelming the single-process server
+    skip_jobs = os.getenv("SKIP_SCHEDULER", "false").lower() in ("1", "true", "yes")
+    if not skip_jobs:
+        start_scheduler()
+    device_polling_task = asyncio.create_task(run_device_polling_loop()) if not skip_jobs else None
     yield
-    device_polling_task.cancel()
-    stop_scheduler()
+    if device_polling_task:
+        device_polling_task.cancel()
+    if not skip_jobs:
+        stop_scheduler()
 
 
 app = FastAPI(
@@ -150,6 +157,7 @@ app.include_router(security_router)
 app.include_router(monitoring_router)
 app.include_router(data_integrity_router)
 app.include_router(ai_router)
+app.include_router(huawei_router)
 app.include_router(performance_router)
 app.include_router(dr_router)
 

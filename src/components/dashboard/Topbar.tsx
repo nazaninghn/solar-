@@ -15,6 +15,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+
 const notifications = [
   {
     icon: TrendingUp,
@@ -66,6 +68,9 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Language Switcher */}
+          <LanguageSwitcher dark={false} />
+
           {/* Notifications */}
           <div className="relative">
             <button

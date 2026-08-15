@@ -11,11 +11,9 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
-const ranges = ["Day", "Week", "Month"] as const;
-type Range = (typeof ranges)[number];
-
-const datasets: Record<Range, { label: string; production: number; consumption: number }[]> = {
+const datasets = {
   Day: [
     { label: "06:00", production: 50, consumption: 320 },
     { label: "08:00", production: 280, consumption: 450 },
@@ -43,8 +41,18 @@ const datasets: Record<Range, { label: string; production: number; consumption: 
   ],
 };
 
+type RangeKey = keyof typeof datasets;
+
 export default function AnalyticsChart() {
-  const [range, setRange] = useState<Range>("Day");
+  const { t } = useLanguage();
+
+  const ranges: { key: RangeKey; label: string }[] = [
+    { key: "Day", label: t.dashboard.productionChart.day },
+    { key: "Week", label: t.dashboard.productionChart.week },
+    { key: "Month", label: t.dashboard.productionChart.month },
+  ];
+
+  const [range, setRange] = useState<RangeKey>("Day");
   const data = datasets[range];
   const unit = range === "Day" ? "kW" : "MWh";
 
@@ -57,30 +65,30 @@ export default function AnalyticsChart() {
     >
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
-          <h3 className="text-base font-semibold text-ink">Production vs Consumption</h3>
+          <h3 className="text-base font-semibold text-ink">{t.dashboard.productionChart.title}</h3>
           <p className="text-xs text-gray-400 mt-0.5">Interactive analytics · {range.toLowerCase()} view</p>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-lime-dark" />
-            <span className="text-xs text-gray-500">Production</span>
+            <span className="text-xs text-gray-500">{t.dashboard.productionChart.production}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-azure" />
-            <span className="text-xs text-gray-500">Consumption</span>
+            <span className="text-xs text-gray-500">{t.dashboard.productionChart.consumption}</span>
           </div>
 
           <div className="flex items-center gap-1 bg-mist/60 rounded-full p-1">
             {ranges.map((r) => (
               <button
-                key={r}
-                onClick={() => setRange(r)}
+                key={r.key}
+                onClick={() => setRange(r.key)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                  range === r ? "bg-ink text-white" : "text-gray-500 hover:text-ink"
+                  range === r.key ? "bg-ink text-white" : "text-gray-500 hover:text-ink"
                 }`}
               >
-                {r}
+                {r.label}
               </button>
             ))}
           </div>
@@ -126,7 +134,7 @@ export default function AnalyticsChart() {
               stroke="#ADC825"
               strokeWidth={2.5}
               fill="url(#limeGrad)"
-              name="Production"
+              name={t.dashboard.productionChart.production}
             />
             <Area
               type="monotone"
@@ -134,7 +142,7 @@ export default function AnalyticsChart() {
               stroke="#4A70BE"
               strokeWidth={2.5}
               fill="url(#azureGrad)"
-              name="Consumption"
+              name={t.dashboard.productionChart.consumption}
             />
           </AreaChart>
         </ResponsiveContainer>

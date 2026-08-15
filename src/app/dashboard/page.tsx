@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import AIInsightBanner from "@/components/dashboard/AIInsightBanner";
 import KPIGrid from "@/components/dashboard/KPIGrid";
 import RecommendationCard from "@/components/dashboard/RecommendationCard";
@@ -8,14 +9,16 @@ import PriceChart from "@/components/dashboard/PriceChart";
 import WeatherCard from "@/components/dashboard/WeatherCard";
 
 export default function DashboardPage() {
+  const { t } = useLanguage();
+
   return (
     <>
       <div>
         <h1 className="text-2xl font-bold text-ink tracking-tight">
-          Good afternoon
+          {t.dashboard.greeting}
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Istanbul Solar Factory — Real-time energy performance
+          {t.dashboard.subtitle}
         </p>
       </div>
 

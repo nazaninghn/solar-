@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CloudSun, Sun, Cloud, Wind, Droplets, MapPin } from "lucide-react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface WeatherData {
   temp: number;
@@ -14,12 +15,12 @@ interface WeatherData {
 }
 
 export default function WeatherCard() {
+  const { t } = useLanguage();
   const [weather, setWeather] = useState<WeatherData | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        // Istanbul coordinates
         const res = await fetch(
           "https://api.open-meteo.com/v1/forecast?latitude=41.01&longitude=28.98&hourly=temperature_2m,cloud_cover,wind_speed_10m,relative_humidity_2m,shortwave_radiation&forecast_days=1&timezone=auto"
         );
@@ -36,7 +37,7 @@ export default function WeatherCard() {
             hourly: Array.from({ length: 5 }, (_, i) => {
               const idx = Math.min(nowHour + i, 23);
               return {
-                time: i === 0 ? "Now" : `${idx}:00`,
+                time: i === 0 ? t.dashboard.weather.now : `${idx}:00`,
                 temp: Math.round(h.temperature_2m[idx] || 0),
                 cloud: h.cloud_cover[idx] || 0,
               };
@@ -48,11 +49,11 @@ export default function WeatherCard() {
       }
     }
     load();
-  }, []);
+  }, [t]);
 
   const getIcon = (cloud: number) => (cloud < 30 ? Sun : cloud < 70 ? CloudSun : Cloud);
   const getCondition = (cloud: number) =>
-    cloud < 20 ? "Clear skies" : cloud < 50 ? "Partly cloudy" : cloud < 80 ? "Cloudy" : "Overcast";
+    cloud < 20 ? t.dashboard.weather.clear : cloud < 50 ? t.dashboard.weather.partlyCloudy : cloud < 80 ? t.dashboard.weather.cloudy : t.dashboard.weather.overcast;
 
   const MainIcon = weather ? getIcon(weather.cloud) : Sun;
 
@@ -65,13 +66,13 @@ export default function WeatherCard() {
     >
       <div className="flex items-center gap-1.5 text-white/60 text-xs">
         <MapPin size={13} />
-        Istanbul Solar Factory
+        {t.dashboard.weather.location}
       </div>
 
       <div className="flex items-center justify-between mt-4">
         <div>
           <p className="text-5xl font-bold tracking-tight">{weather ? `${weather.temp}°` : "—"}</p>
-          <p className="text-sm text-white/60 mt-1">{weather ? getCondition(weather.cloud) : "Loading..."}</p>
+          <p className="text-sm text-white/60 mt-1">{weather ? getCondition(weather.cloud) : t.dashboard.loading}</p>
         </div>
         <MainIcon size={56} className="text-lime" strokeWidth={1.5} />
       </div>
@@ -80,7 +81,7 @@ export default function WeatherCard() {
         <div className="rounded-2xl bg-white/10 backdrop-blur-sm px-4 py-3">
           <div className="flex items-center gap-1.5 text-white/50 text-[11px]">
             <Sun size={12} />
-            Irradiance
+            {t.dashboard.weather.irradiance}
           </div>
           <p className="text-lg font-bold mt-1">{weather ? `${weather.radiation} W/m²` : "—"}</p>
           <div className="h-1.5 rounded-full bg-white/15 mt-2 overflow-hidden">
@@ -90,18 +91,18 @@ export default function WeatherCard() {
         <div className="rounded-2xl bg-white/10 backdrop-blur-sm px-4 py-3">
           <div className="flex items-center gap-1.5 text-white/50 text-[11px]">
             <Wind size={12} />
-            Wind
+            {t.dashboard.weather.wind}
           </div>
           <p className="text-lg font-bold mt-1">{weather ? `${weather.wind} km/h` : "—"}</p>
           <div className="flex items-center gap-1.5 text-white/50 text-[11px] mt-2">
             <Droplets size={12} />
-            {weather ? `${weather.humidity}% humidity` : "—"}
+            {weather ? `${weather.humidity}% ${t.dashboard.weather.humidity}` : "—"}
           </div>
         </div>
       </div>
 
       <div className="mt-6 pt-5 border-t border-white/10 flex-1">
-        <p className="text-xs text-white/50 mb-3">Hourly forecast</p>
+        <p className="text-xs text-white/50 mb-3">{t.dashboard.weather.hourly}</p>
         <div className="flex items-center justify-between">
           {(weather?.hourly || []).map((f) => {
             const Icon = getIcon(f.cloud);

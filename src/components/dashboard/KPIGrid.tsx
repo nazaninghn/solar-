@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { Sun, Zap, Battery, Euro, PiggyBank, Leaf } from "lucide-react";
 import KPICard from "./KPICard";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
 export default function KPIGrid() {
+  const { t } = useLanguage();
   const [kpis, setKpis] = useState<any>(null);
 
   useEffect(() => {
@@ -16,7 +18,6 @@ export default function KPIGrid() {
         const headers: Record<string, string> = {};
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
-        // Get latest energy readings
         const res = await fetch(`${API}/api/v1/factories/1/energy/readings?limit=24`, { headers });
         if (res.ok) {
           const data = await res.json();
@@ -51,10 +52,10 @@ export default function KPIGrid() {
   const cards = [
     {
       icon: Sun,
-      label: "Solar Production",
+      label: t.dashboard.solarProduction,
       value: kpis ? String(kpis.solarKw) : "—",
       unit: "kW",
-      subtext: kpis ? `${kpis.solarMwh} MWh today` : "Loading...",
+      subtext: kpis ? `${kpis.solarMwh} MWh ${t.dashboard.today}` : t.dashboard.loading,
       trend: "+12%",
       trendUp: true,
       sparkline: kpis?.sparkSolar || [0],
@@ -64,10 +65,10 @@ export default function KPIGrid() {
     },
     {
       icon: Zap,
-      label: "Consumption",
+      label: t.dashboard.consumption,
       value: kpis ? String(kpis.consumptionKw) : "—",
       unit: "kW",
-      subtext: kpis ? `${kpis.consumptionMwh} MWh today` : "Loading...",
+      subtext: kpis ? `${kpis.consumptionMwh} MWh ${t.dashboard.today}` : t.dashboard.loading,
       trend: "-5%",
       trendUp: true,
       sparkline: kpis?.sparkCons || [0],
@@ -77,10 +78,10 @@ export default function KPIGrid() {
     },
     {
       icon: Battery,
-      label: "Battery Charge",
+      label: t.dashboard.batteryCharge,
       value: "72",
       unit: "%",
-      subtext: "Charging · Optimal range",
+      subtext: t.dashboard.charging,
       trend: "+8%",
       trendUp: true,
       sparkline: [40, 44, 48, 55, 58, 62, 66, 68, 70, 72],
@@ -90,10 +91,10 @@ export default function KPIGrid() {
     },
     {
       icon: Euro,
-      label: "Grid Cost",
+      label: t.dashboard.gridCost,
       value: kpis ? kpis.gridCost.toFixed(3) : "—",
       unit: "€/kWh",
-      subtext: "Below daily average",
+      subtext: t.dashboard.belowAvg,
       trend: "-3%",
       trendUp: true,
       sparkline: [24, 22, 20, 21, 19, 18, 18.4, 17, 18, 18.4],
@@ -103,10 +104,10 @@ export default function KPIGrid() {
     },
     {
       icon: PiggyBank,
-      label: "Savings",
+      label: t.dashboard.savings,
       value: kpis ? kpis.savings.toLocaleString() : "—",
       unit: "€",
-      subtext: "This month · from solar",
+      subtext: `${t.dashboard.thisMonth} · ${t.dashboard.fromSolar}`,
       trend: "+12%",
       trendUp: true,
       sparkline: [10, 12, 14, 13, 16, 15, 17, 18, 17.5, 18.4],
@@ -116,10 +117,10 @@ export default function KPIGrid() {
     },
     {
       icon: Leaf,
-      label: "CO₂ Reduction",
+      label: t.dashboard.co2Reduction,
       value: kpis ? kpis.co2 : "—",
       unit: "tons",
-      subtext: "This month",
+      subtext: t.dashboard.thisMonth,
       trend: "+15%",
       trendUp: true,
       sparkline: [1.2, 1.4, 1.5, 1.6, 1.8, 1.9, 2.0, 2.1, 2.3, 2.4],

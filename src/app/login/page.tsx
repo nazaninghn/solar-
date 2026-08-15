@@ -7,8 +7,10 @@ import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/auth/AuthLayout";
 import FormField from "@/components/auth/FormField";
 import SocialButtons from "@/components/auth/SocialButtons";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -33,34 +35,39 @@ export default function LoginPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.detail || "Invalid email or password");
+        let message = t.auth.invalidCredentials;
+        if (typeof data.detail === "string") {
+          message = data.detail;
+        } else if (Array.isArray(data.detail)) {
+          message = data.detail.map((e: { msg?: string }) => e.msg || "Validation error").join(", ");
+        }
+        setError(message);
         setLoading(false);
         return;
       }
 
       const data = await res.json();
-      // Store tokens
       localStorage.setItem("access_token", data.access_token);
       if (data.refresh_token) {
         localStorage.setItem("refresh_token", data.refresh_token);
       }
       router.push("/dashboard");
     } catch (err) {
-      setError("Connection failed. Please try again.");
+      setError(t.auth.connectionFailed);
       setLoading(false);
     }
   }
 
   return (
     <AuthLayout
-      eyebrow="Welcome Back"
-      title="Sign in to SolarFlow"
-      subtitle="Access your energy dashboard, forecasts, and savings reports."
+      eyebrow={t.auth.welcomeBack}
+      title={t.auth.signInTitle}
+      subtitle={t.auth.signInSubtitle}
       footer={
         <>
-          Don&apos;t have an account?{" "}
+          {t.auth.noAccount}{" "}
           <Link href="/register" className="font-semibold text-ink hover:text-lime-dark transition-colors">
-            Create one
+            {t.auth.createOne}
           </Link>
         </>
       }
@@ -72,7 +79,7 @@ export default function LoginPage() {
           </div>
         )}
         <FormField
-          label="Email"
+          label={t.auth.email}
           type="email"
           icon={Mail}
           placeholder="you@company.com"
@@ -81,7 +88,7 @@ export default function LoginPage() {
           onChange={setEmail}
         />
         <FormField
-          label="Password"
+          label={t.auth.password}
           type="password"
           icon={Lock}
           placeholder="••••••••"
@@ -98,13 +105,13 @@ export default function LoginPage() {
               onChange={(e) => setRemember(e.target.checked)}
               className="w-4 h-4 rounded accent-[#ADC825] cursor-pointer"
             />
-            <span className="text-sm text-gray-600">Remember me</span>
+            <span className="text-sm text-gray-600">{t.auth.rememberMe}</span>
           </label>
           <Link
             href="/forgot-password"
             className="text-sm font-semibold text-ink hover:text-lime-dark transition-colors"
           >
-            Forgot password?
+            {t.auth.forgotPassword}
           </Link>
         </div>
 
@@ -113,12 +120,12 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full py-3.5 rounded-full bg-ink text-white text-sm font-semibold hover:bg-black transition-colors disabled:opacity-60"
         >
-          {loading ? "Signing in…" : "Sign In"}
+          {loading ? t.auth.signingIn : t.auth.signIn}
         </button>
 
         <div className="flex items-center gap-3 py-1">
           <div className="h-px flex-1 bg-gray-200" />
-          <span className="text-xs text-gray-400 uppercase tracking-wide">or continue with</span>
+          <span className="text-xs text-gray-400 uppercase tracking-wide">{t.auth.orContinueWith}</span>
           <div className="h-px flex-1 bg-gray-200" />
         </div>
 
@@ -128,7 +135,7 @@ export default function LoginPage() {
           href="#cta"
           className="flex items-center justify-center w-full py-3.5 rounded-full border border-lime-dark/40 bg-lime/10 text-sm font-semibold text-ink hover:bg-lime/20 transition-colors"
         >
-          Book a Demo Instead
+          {t.auth.bookDemo}
         </a>
       </form>
     </AuthLayout>
