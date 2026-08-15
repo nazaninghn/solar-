@@ -12,10 +12,10 @@ export default function DashboardPage() {
     <>
       <div>
         <h1 className="text-2xl font-bold text-ink tracking-tight">
-          Good afternoon, Jane
+          Good afternoon
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Here&apos;s how your facility is performing right now.
+          Istanbul Solar Factory — Real-time energy performance
         </p>
       </div>
 

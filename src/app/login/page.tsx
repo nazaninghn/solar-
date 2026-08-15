@@ -13,15 +13,42 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    // بدون بک‌اند: بعد از 1 ثانیه ریدایرکت به داشبورد
-    setTimeout(() => {
+    setError("");
+
+    try {
+      const res = await fetch(
+        (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001") + "/api/v1/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.detail || "Invalid email or password");
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      // Store tokens
+      localStorage.setItem("access_token", data.access_token);
+      if (data.refresh_token) {
+        localStorage.setItem("refresh_token", data.refresh_token);
+      }
       router.push("/dashboard");
-    }, 1000);
+    } catch (err) {
+      setError("Connection failed. Please try again.");
+      setLoading(false);
+    }
   }
 
   return (
@@ -39,6 +66,11 @@ export default function LoginPage() {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5">
+        {error && (
+          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
+            {error}
+          </div>
+        )}
         <FormField
           label="Email"
           type="email"

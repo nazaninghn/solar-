@@ -1,17 +1,61 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CloudSun, Sun, Cloud, Wind, Droplets, MapPin } from "lucide-react";
 
-const forecast = [
-  { time: "Now", icon: Sun, temp: "24°" },
-  { time: "13:00", icon: Sun, temp: "26°" },
-  { time: "14:00", icon: CloudSun, temp: "25°" },
-  { time: "15:00", icon: CloudSun, temp: "23°" },
-  { time: "16:00", icon: Cloud, temp: "21°" },
-];
+interface WeatherData {
+  temp: number;
+  cloud: number;
+  wind: number;
+  humidity: number;
+  radiation: number;
+  hourly: { time: string; temp: number; cloud: number }[];
+}
 
 export default function WeatherCard() {
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        // Istanbul coordinates
+        const res = await fetch(
+          "https://api.open-meteo.com/v1/forecast?latitude=41.01&longitude=28.98&hourly=temperature_2m,cloud_cover,wind_speed_10m,relative_humidity_2m,shortwave_radiation&forecast_days=1&timezone=auto"
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const h = data.hourly;
+          const nowHour = new Date().getHours();
+          setWeather({
+            temp: Math.round(h.temperature_2m[nowHour] || 0),
+            cloud: h.cloud_cover[nowHour] || 0,
+            wind: Math.round(h.wind_speed_10m[nowHour] || 0),
+            humidity: h.relative_humidity_2m[nowHour] || 0,
+            radiation: Math.round(h.shortwave_radiation[nowHour] || 0),
+            hourly: Array.from({ length: 5 }, (_, i) => {
+              const idx = Math.min(nowHour + i, 23);
+              return {
+                time: i === 0 ? "Now" : `${idx}:00`,
+                temp: Math.round(h.temperature_2m[idx] || 0),
+                cloud: h.cloud_cover[idx] || 0,
+              };
+            }),
+          });
+        }
+      } catch (e) {
+        console.error("Weather fetch failed", e);
+      }
+    }
+    load();
+  }, []);
+
+  const getIcon = (cloud: number) => (cloud < 30 ? Sun : cloud < 70 ? CloudSun : Cloud);
+  const getCondition = (cloud: number) =>
+    cloud < 20 ? "Clear skies" : cloud < 50 ? "Partly cloudy" : cloud < 80 ? "Cloudy" : "Overcast";
+
+  const MainIcon = weather ? getIcon(weather.cloud) : Sun;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -21,15 +65,15 @@ export default function WeatherCard() {
     >
       <div className="flex items-center gap-1.5 text-white/60 text-xs">
         <MapPin size={13} />
-        Facility A · Munich
+        Istanbul Solar Factory
       </div>
 
       <div className="flex items-center justify-between mt-4">
         <div>
-          <p className="text-5xl font-bold tracking-tight">24°</p>
-          <p className="text-sm text-white/60 mt-1">Sunny, clear skies</p>
+          <p className="text-5xl font-bold tracking-tight">{weather ? `${weather.temp}°` : "—"}</p>
+          <p className="text-sm text-white/60 mt-1">{weather ? getCondition(weather.cloud) : "Loading..."}</p>
         </div>
-        <Sun size={56} className="text-lime" strokeWidth={1.5} />
+        <MainIcon size={56} className="text-lime" strokeWidth={1.5} />
       </div>
 
       <div className="grid grid-cols-2 gap-3 mt-6">
@@ -38,9 +82,9 @@ export default function WeatherCard() {
             <Sun size={12} />
             Irradiance
           </div>
-          <p className="text-lg font-bold mt-1">890 W/m²</p>
+          <p className="text-lg font-bold mt-1">{weather ? `${weather.radiation} W/m²` : "—"}</p>
           <div className="h-1.5 rounded-full bg-white/15 mt-2 overflow-hidden">
-            <div className="h-full bg-lime rounded-full" style={{ width: "82%" }} />
+            <div className="h-full bg-lime rounded-full" style={{ width: `${Math.min((weather?.radiation || 0) / 10, 100)}%` }} />
           </div>
         </div>
         <div className="rounded-2xl bg-white/10 backdrop-blur-sm px-4 py-3">
@@ -48,10 +92,10 @@ export default function WeatherCard() {
             <Wind size={12} />
             Wind
           </div>
-          <p className="text-lg font-bold mt-1">12 km/h</p>
+          <p className="text-lg font-bold mt-1">{weather ? `${weather.wind} km/h` : "—"}</p>
           <div className="flex items-center gap-1.5 text-white/50 text-[11px] mt-2">
             <Droplets size={12} />
-            34% humidity
+            {weather ? `${weather.humidity}% humidity` : "—"}
           </div>
         </div>
       </div>
@@ -59,13 +103,16 @@ export default function WeatherCard() {
       <div className="mt-6 pt-5 border-t border-white/10 flex-1">
         <p className="text-xs text-white/50 mb-3">Hourly forecast</p>
         <div className="flex items-center justify-between">
-          {forecast.map((f) => (
-            <div key={f.time} className="flex flex-col items-center gap-1.5">
-              <span className="text-[11px] text-white/50">{f.time}</span>
-              <f.icon size={16} className="text-lime" />
-              <span className="text-xs font-semibold">{f.temp}</span>
-            </div>
-          ))}
+          {(weather?.hourly || []).map((f) => {
+            const Icon = getIcon(f.cloud);
+            return (
+              <div key={f.time} className="flex flex-col items-center gap-1.5">
+                <span className="text-[11px] text-white/50">{f.time}</span>
+                <Icon size={16} className="text-lime" />
+                <span className="text-xs font-semibold">{f.temp}°</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </motion.div>
