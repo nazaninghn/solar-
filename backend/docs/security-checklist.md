@@ -33,9 +33,9 @@
 - [x] File upload validation (extension, size, name)
 
 ## Rate Limiting
-- [x] Login rate limiting
-- [x] API rate limiting per user/org
-- [x] Brute force protection with lockout
+- [x] Login rate limiting (5/min per IP+email, `app/auth/rate_limit.py`)
+- [x] General API rate limiting (300/min per IP, `app/core/api_rate_limit.py`, Step 82) — per-IP, not per-user/org; corrected from this checklist's earlier claim
+- [x] Brute force protection with lockout (`app/modules/security/lockout.py`, Step 47) — **wired into the actual login flow in Step 86**; the module existed fully implemented since Step 47 but had no caller anywhere until this step, so this box was previously checked incorrectly
 
 ## Secrets Management
 - [x] Secrets in environment variables only

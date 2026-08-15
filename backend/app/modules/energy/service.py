@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.query_utils import utc_date
 from app.energy.schemas import EnergyInput
 from app.energy.service import calculate_energy_state
 from app.models.battery_system import BatterySystem
@@ -223,8 +224,8 @@ def get_energy_summary(
             ),
         ).where(
             EnergyReading.factory_id == factory_id,
-            func.date(EnergyReading.timestamp) >= start_date,
-            func.date(EnergyReading.timestamp) <= end_date,
+            utc_date(EnergyReading.timestamp) >= start_date,
+            utc_date(EnergyReading.timestamp) <= end_date,
         )
     ).one()
 

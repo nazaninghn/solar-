@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.query_utils import utc_date
 from app.models.device import Device
 from app.models.factory import Factory
 from app.models.organization import Organization
@@ -24,15 +25,16 @@ def compute_signups(db: Session, days: int = 30) -> list[dict]:
     matching how registration actually works (app.modules.auth.service.
     register_user always creates exactly one new Organization)."""
     window_start = datetime.now(timezone.utc) - timedelta(days=days)
+    day_col = utc_date(Organization.created_at).label("day")
 
     rows = db.execute(
         select(
-            func.date(Organization.created_at).label("day"),
+            day_col,
             func.count(Organization.id),
         )
         .where(Organization.created_at >= window_start)
-        .group_by(func.date(Organization.created_at))
-        .order_by(func.date(Organization.created_at))
+        .group_by(day_col)
+        .order_by(day_col)
     ).all()
 
     return [{"date": row.day.isoformat(), "signups": row[1]} for row in rows]

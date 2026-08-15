@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.query_utils import utc_date
 from app.forecast.service import get_energy_forecast
 from app.models.battery_system import BatterySystem
 from app.models.device import Device
@@ -37,17 +38,18 @@ def _get_historical_consumption_baseline_kwh(
     days: int = 30,
 ) -> float:
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    day_col = utc_date(EnergyReading.timestamp).label("day")
 
     daily_sums = db.execute(
         select(
-            func.date(EnergyReading.timestamp).label("day"),
+            day_col,
             func.sum(EnergyReading.consumption_kwh).label("total"),
         )
         .where(
             EnergyReading.factory_id == factory_id,
             EnergyReading.timestamp >= cutoff,
         )
-        .group_by(func.date(EnergyReading.timestamp))
+        .group_by(day_col)
     ).all()
 
     if not daily_sums:

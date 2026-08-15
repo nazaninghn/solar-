@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.query_utils import utc_date
 from app.integrations.weather.service import WeatherService
 from app.models.energy_reading import EnergyReading
 from app.models.factory import Factory
@@ -103,17 +104,18 @@ def get_historical_baseline_kwh(
     the brief's "Historical Production" input has to come from somewhere.
     """
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    day_col = utc_date(EnergyReading.timestamp).label("day")
 
     daily_sums = db.execute(
         select(
-            func.date(EnergyReading.timestamp).label("day"),
+            day_col,
             func.sum(EnergyReading.solar_generation_kwh).label("total"),
         )
         .where(
             EnergyReading.factory_id == factory_id,
             EnergyReading.timestamp >= cutoff,
         )
-        .group_by(func.date(EnergyReading.timestamp))
+        .group_by(day_col)
     ).all()
 
     if not daily_sums:
@@ -134,14 +136,15 @@ def count_historical_days(
     far less trustworthy than one built from 30.
     """
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    day_col = utc_date(EnergyReading.timestamp).label("day")
 
     daily_sums = db.execute(
-        select(func.date(EnergyReading.timestamp).label("day"))
+        select(day_col)
         .where(
             EnergyReading.factory_id == factory_id,
             EnergyReading.timestamp >= cutoff,
         )
-        .group_by(func.date(EnergyReading.timestamp))
+        .group_by(day_col)
     ).all()
 
     return len(daily_sums)

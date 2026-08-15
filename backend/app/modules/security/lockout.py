@@ -69,8 +69,16 @@ def is_account_locked(db: Session, user_id: int) -> bool:
     return False
 
 
-def record_successful_login(db: Session, user_id: int, ip_address: str | None = None) -> None:
-    """Reset lockout on successful login."""
+def record_successful_login(db: Session, user_id: int) -> None:
+    """Reset lockout on successful login.
+
+    86: no longer logs its own LOGIN_SUCCESS SecurityEvent - Step 82
+    already made app/modules/auth/router.py's login() the single call
+    site for that (with the request's ip_address/user_agent, which
+    this function never had access to). Logging it here too would
+    double-count every successful login in SecurityEvent and in the
+    Step 79 correlation job that reads it.
+    """
     lockout = db.query(AccountLockout).filter(AccountLockout.user_id == user_id).first()
     if lockout and lockout.failed_attempts > 0:
         lockout.failed_attempts = 0
@@ -78,13 +86,3 @@ def record_successful_login(db: Session, user_id: int, ip_address: str | None = 
         lockout.locked_reason = None
         lockout.updated_at = datetime.now(timezone.utc)
         db.commit()
-
-    # Security event
-    db.add(SecurityEvent(
-        user_id=user_id,
-        event_type="LOGIN_SUCCESS",
-        severity="INFO",
-        ip_address=ip_address,
-        created_at=datetime.now(timezone.utc),
-    ))
-    db.commit()

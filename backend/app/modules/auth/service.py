@@ -22,6 +22,11 @@ from app.models.password_reset_token import PasswordResetToken
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.modules.security.audit_service import EVENT_TOKEN_REUSE, log_security_event
+from app.modules.security.lockout import (
+    is_account_locked,
+    record_failed_login,
+    record_successful_login,
+)
 
 
 def register_user(
@@ -133,7 +138,16 @@ def authenticate_user(
     db: Session,
     email: str,
     password: str,
+    ip_address: str | None = None,
 ):
+    """86: wires in app/modules/security/lockout.py (Step 47), which
+    existed fully implemented but had no caller anywhere in the
+    codebase — 5 failed attempts locks the account for 30 minutes.
+    Complements Step 82's login rate limiting (5/min per IP+email,
+    resets every minute): lockout persists per-account regardless of
+    which IP the attempts came from, closing the gap a distributed
+    credential-stuffing attempt (many IPs, one account) would slip
+    through the IP-keyed limiter."""
     user = db.scalar(
         select(User).where(User.email == email)
     )
@@ -144,11 +158,20 @@ def authenticate_user(
     if not user.is_active:
         return None
 
+    # A locked-out account fails the same generic way as a wrong
+    # password — not a distinct error — so a caller can't use this
+    # response to enumerate which accounts exist or are locked.
+    if is_account_locked(db, user.id):
+        return None
+
     if not verify_password(
         password,
         user.hashed_password,
     ):
+        record_failed_login(db, user.id, ip_address=ip_address)
         return None
+
+    record_successful_login(db, user.id)
 
     user.last_login_at = datetime.now(timezone.utc)
     db.commit()

@@ -1,31 +1,35 @@
 # SolarFlow — Production Release Process (STEP 56)
 
+Filled in with real status as of Step 86 (2026-08-14). See
+`docs/production-readiness-report.md` for the full synthesis and
+Go/No-Go decision this feeds into.
+
 ## Release Checklist
 
 ### Pre-Deploy
 
-- [ ] Release candidate frozen (no new features)
-- [ ] Version tag created: `git tag v1.0.0`
-- [ ] All P0/P1 bugs fixed
-- [ ] QA sign-off received
-- [ ] Security checklist passed
+- [ ] Release candidate frozen (no new features) — not yet declared; still mid-roadmap at Step 86
+- [ ] Version tag created: `git tag v1.0.0` — **note:** an earlier `v1.0.0` tag already exists in this repo's history (predates Steps 77-86); a real release now needs a new tag, not a re-use of that one
+- [x] All P0/P1 bugs fixed — `docs/operations/qa-report.md`: Critical 0, High 0
+- [x] QA sign-off received — `docs/operations/qa-report.md`'s Go/No-Go: **GO**, with 2 documented residual risks
+- [x] Security checklist passed — `docs/security-checklist.md`, corrected and re-verified in Step 86
 
 ### Environment Verification
 
-- [ ] DATABASE_URL → Production database
-- [ ] JWT_SECRET → Unique production secret (not dev)
-- [ ] APP_ENV=production
-- [ ] DEBUG=false
-- [ ] CORS_ALLOWED_ORIGINS → Production frontend URL only
-- [ ] All external API keys are production keys
-- [ ] No dev/staging secrets in production
+- [ ] DATABASE_URL → Production database — **⚠️ CONFIRM IN RENDER DASHBOARD**
+- [ ] JWT_SECRET → Unique production secret (not dev) — **⚠️ CONFIRM IN RENDER DASHBOARD**
+- [ ] APP_ENV=production — **⚠️ CONFIRM IN RENDER DASHBOARD**
+- [ ] DEBUG=false — **⚠️ CONFIRM IN RENDER DASHBOARD** (low-risk either way — see `production-launch-checklist.md`'s note on why)
+- [ ] CORS_ALLOWED_ORIGINS → Production frontend URL only — **⚠️ CONFIRM IN RENDER DASHBOARD**
+- [ ] All external API keys are production keys — **N/A**: the only real external dependency is the Open-Meteo weather API, which needs no API key
+- [x] No dev/staging secrets in production — `.env` is gitignored, never committed; confirmed by Step 85's secrets scan finding zero real secrets in the repo
 
 ### Database
 
-- [ ] Production database backup taken
-- [ ] Backup verified (can restore)
-- [ ] Migrations reviewed for destructive changes
-- [ ] Migration rollback strategy documented
+- [x] Production database backup — Render-managed automatic daily backups + PITR
+- [ ] Backup verified (can restore) — **known, documented gap** (Step 83/85) — no restore has actually been executed and validated this session; infra/access constraints, not an oversight
+- [x] Migrations reviewed for destructive changes — every migration this session was reviewed individually before applying; none drop columns/tables with real data
+- [x] Migration rollback strategy documented — 59/59 migrations statically verified to have symmetric upgrade/downgrade (Step 85); live downgrade execution not performed (same access constraint as backup restore)
 
 ### Deploy
 
@@ -109,4 +113,10 @@ After 24 hours of stable operation:
 - [ ] Release notes published
 - [ ] Team notified
 
-**Status: PRODUCTION LIVE ✅**
+**Status as of 2026-08-14: NOT independently confirmed.** A deploy for
+commit `30370a4` (Step 83) timed out on Render (migration hang, no port
+ever opened — see `alembic/env.py`'s `lock_timeout` fix, Step 84). Commits
+since then (`5d61715` through the current Step 86 push) have not had their
+Render deploy status confirmed back to this session. Don't treat the line
+above as a claim that production is currently healthy — run the Post-Deploy
+Verification steps above against the real URL before believing it.

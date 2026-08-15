@@ -94,14 +94,15 @@ def login(
     # burst can't be used to hammer authenticate_user's password hashing.
     enforce_login_rate_limit(request, data.email)
 
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+
     user = authenticate_user(
         db=db,
         email=data.email,
         password=data.password,
+        ip_address=ip_address,
     )
-
-    ip_address = request.client.host if request.client else None
-    user_agent = request.headers.get("user-agent")
 
     if not user:
         log_security_event(
