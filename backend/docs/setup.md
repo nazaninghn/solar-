@@ -42,6 +42,32 @@ uvicorn app.main:app --reload --port 8001
 | `DEBUG` | Enable debug mode (true/false) | No |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated frontend URLs | Production |
 | `WEATHER_BASE_URL` | Weather API base URL | No |
+| `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` | Connection pool sizing — see `docs/operations/performance-scalability-report.md` for why the defaults (20/30) are what they are | No |
+| `DB_POOL_TIMEOUT_SECONDS` / `DB_POOL_RECYCLE_SECONDS` | Pool timeout/recycle behavior | No |
+| `API_RATE_LIMIT_PER_MINUTE` | General per-IP API rate limit (default 300) | No |
+
+Full list with defaults: `.env.example`.
+
+## Code Quality (Step 85)
+
+```bash
+# Install dev/CI tooling (not shipped to production)
+pip install -r requirements-dev.txt
+
+# Lint
+ruff check app
+
+# Security scan (fails on medium+ severity)
+bandit -r app -x tests --severity-level medium
+
+# Dependency vulnerability scan
+pip-audit -r requirements.txt
+
+# Secrets scan against the committed baseline
+detect-secrets scan --baseline .secrets.baseline --all-files app/ alembic/ scripts/ docs/ tests/ .env.example
+```
+
+All four run in CI (`.github/workflows/ci.yml`) on every push/PR.
 
 ## Database
 

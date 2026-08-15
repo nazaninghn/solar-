@@ -1,76 +1,35 @@
 # SolarFlow — Operations Runbooks
 
-## API Down
+**87: `docs/runbooks.md` (repo root) is the current, actively-maintained
+runbook set — written with this project's real architecture (single
+Render instance, in-process APScheduler, no separate worker) and exact
+endpoint references (`/api/v1/system/health`, `/api/v1/system/jobs`,
+`/api/v1/system/metrics`). For API Down, Database Down, High Latency, and
+High Error Rate, start there — it has real endpoint paths and response
+fields to check, not just generic steps.**
 
-1. Check `GET /health` — is it responding?
-2. Check Render dashboard — is the service running?
-3. Check deploy logs — recent failed deploy?
-4. Check application logs for errors
-5. Check database connectivity (`/health/ready`)
-6. If recent deploy caused it → Rollback
-7. If DB issue → check database health
-8. Verify recovery: `GET /health` → 200
+This file's **Worker Down** and **Queue Stuck** sections below are N/A —
+there is no separate worker process (`docs/architecture-decisions.md`'s
+ADR-1: APScheduler runs in-process, confirmed no separate worker exists
+anywhere in this codebase). **Payment Failure** is also N/A — no payment
+gateway integration exists (confirmed by grep, `docs/policies/
+vendor-policy.md`). Kept here for historical reference, not because
+they're live procedures. **Storage Full** and **Security Incident** below
+remain real and aren't duplicated in `docs/runbooks.md`.
 
-## Database Down
+## API Down — see `docs/runbooks.md` instead
 
-1. Check Render PostgreSQL dashboard
-2. Check connection count (pool exhaustion?)
-3. Check recent migrations
-4. Check storage (disk full?)
-5. If provider issue → wait + monitor
-6. If connection pool → restart API service
-7. Verify: `GET /health/ready` → ready
+## Database Down — see `docs/runbooks.md`'s "Database down / unreachable"
 
-## Worker Down
+## Worker Down — N/A, no separate worker exists (see note above)
 
-1. Check worker process in Render
-2. Check worker logs for crash reason
-3. Check queue depth (growing = worker not processing)
-4. Check memory/CPU
-5. If crash loop → check recent code change
-6. Restart worker
-7. Verify: queue depth decreasing
+## Queue Stuck — N/A, no separate queue exists (see note above)
 
-## Queue Stuck
+## High Latency — see `docs/operations/performance-scalability-report.md` for the real, measured bottleneck (connection pool) and its fix
 
-1. Check queue size (growing?)
-2. Check worker status (alive?)
-3. Check failed jobs count
-4. Check worker logs for errors
-5. Check database (worker can't write?)
-6. If safe: restart worker
-7. If unsafe: investigate failed jobs first
-8. Verify: queue backlog decreasing
+## High Error Rate — see `docs/runbooks.md`'s "High error rate"
 
-## High Latency
-
-1. Identify which endpoints are slow
-2. Check database query times
-3. Check external API latency
-4. Check CPU/memory
-5. Check recent deploy (regression?)
-6. Look for N+1 queries or missing indexes
-7. If external API: check circuit breaker
-8. If DB: optimize query or add index
-
-## High Error Rate
-
-1. Check error logs (what's failing?)
-2. Check if specific endpoint or widespread
-3. Check recent deploy
-4. Check database connectivity
-5. Check external services
-6. If new bug → hotfix or rollback
-7. Verify: error rate returns to baseline
-
-## Payment Failure
-
-1. Check payment provider status
-2. Check webhook delivery
-3. Check credentials (expired?)
-4. Check rate limits
-5. If provider down → monitor, notify finance team
-6. If our bug → fix and retry failed payments
+## Payment Failure — N/A, no payment gateway integration exists (see note above)
 
 ## Storage Full
 
