@@ -78,6 +78,7 @@ oversight.
 
 ## 13 — Production Readiness
 - [`production-readiness-report.md`](production-readiness-report.md) — Step 86's full synthesis across Steps 77-86, with Go/No-Go decision
+- [`final-architecture-review.md`](final-architecture-review.md) — **new (Step 88)**: final cross-cutting review across all 9 architecture dimensions (scalability, reliability, security, data, integration, performance, cost, technical debt) with a formal Architecture Approved decision
 
 ## 14 — Change Management
 - [`../CHANGELOG.md`](../CHANGELOG.md) — version history
