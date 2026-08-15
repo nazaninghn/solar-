@@ -22,7 +22,6 @@ estimated or hardcoded.
 
 import argparse
 import asyncio
-import statistics
 import time
 import uuid
 from dataclasses import dataclass, field
