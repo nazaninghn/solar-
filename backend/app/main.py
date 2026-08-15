@@ -28,6 +28,7 @@ from app.modules.company.router import router as company_router
 from app.modules.compliance.router import router as compliance_router
 from app.modules.control.router import router as control_router
 from app.modules.data_integrity.router import router as data_integrity_router
+from app.modules.ai.router import router as ai_router
 from app.modules.devices.router import device_router
 from app.modules.devices.router import router as devices_router
 from app.modules.disaster_recovery.router import router as dr_router
@@ -148,6 +149,7 @@ app.include_router(finops_router)
 app.include_router(security_router)
 app.include_router(monitoring_router)
 app.include_router(data_integrity_router)
+app.include_router(ai_router)
 app.include_router(performance_router)
 app.include_router(dr_router)
 
