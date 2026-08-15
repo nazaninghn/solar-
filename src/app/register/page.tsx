@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { User, Mail, Lock, Building2 } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import FormField from "@/components/auth/FormField";
@@ -16,11 +17,67 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => setLoading(false), 1200);
+    setError("");
+
+    try {
+      const res = await fetch(
+        (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001") + "/api/v1/auth/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            password,
+            full_name: name,
+            organization_name: company || "My Organization",
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        let message = "Registration failed";
+        if (typeof data.detail === "string") {
+          message = data.detail;
+        } else if (Array.isArray(data.detail)) {
+          message = data.detail.map((e: { msg?: string }) => e.msg || "Validation error").join(", ");
+        }
+        setError(message);
+        setLoading(false);
+        return;
+      }
+
+      // Registration successful — now auto-login
+      const loginRes = await fetch(
+        (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001") + "/api/v1/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
+
+      if (loginRes.ok) {
+        const data = await loginRes.json();
+        localStorage.setItem("access_token", data.access_token);
+        if (data.refresh_token) {
+          localStorage.setItem("refresh_token", data.refresh_token);
+        }
+        router.push("/dashboard");
+      } else {
+        // Registered but auto-login failed — redirect to login page
+        router.push("/login");
+      }
+    } catch (err) {
+      setError(t.auth.connectionFailed);
+      setLoading(false);
+    }
   }
 
   return (
@@ -38,6 +95,11 @@ export default function RegisterPage() {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-5">
+        {error && (
+          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
+            {error}
+          </div>
+        )}
         <FormField
           label={t.auth.fullName}
           icon={User}
