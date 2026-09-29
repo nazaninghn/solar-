@@ -27,11 +27,13 @@ from app.modules.control import models as _control_models  # noqa: F401
 from app.modules.data_integrity import models as _data_integrity_models  # noqa: F401
 from app.modules.disaster_recovery import models as _disaster_recovery_models  # noqa: F401
 from app.modules.events import models as _events_models  # noqa: F401
+from app.modules.failure_prediction import models as _failure_prediction_models  # noqa: F401
 from app.modules.finance import models as _finance_models  # noqa: F401
 from app.modules.finops import models as _finops_models  # noqa: F401
 from app.modules.forecasting import models as _forecasting_models  # noqa: F401
 from app.modules.gateway import models as _gateway_models  # noqa: F401
 from app.modules.iot_gateway import models as _iot_gateway_models  # noqa: F401
+from app.modules.market import models as _market_models  # noqa: F401
 from app.modules.monitoring import models as _monitoring_models  # noqa: F401
 from app.modules.observability import models as _observability_models  # noqa: F401
 from app.modules.optimization import models as _optimization_models  # noqa: F401
@@ -119,6 +121,13 @@ def run_migrations_online() -> None:
         # instead of burning the entire deploy window in silence.
         connection.execute(text("SET lock_timeout = '30s'"))
         connection.execute(text("SET statement_timeout = '120s'"))
+        # SQLAlchemy 2.0 autobegins a transaction on the first execute()
+        # above; left open, it makes context.begin_transaction() below a
+        # no-op and the migration is rolled back when the connection
+        # closes — alembic still logs "Running upgrade" and exits 0.
+        # Committing here ends that implicit transaction; plain (non-
+        # LOCAL) SET is session-scoped, so both timeouts still apply.
+        connection.commit()
 
         context.configure(
             connection=connection, target_metadata=target_metadata

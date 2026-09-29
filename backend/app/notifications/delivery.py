@@ -1,6 +1,7 @@
 import asyncio
 import time
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 from sqlalchemy.orm import Session
 
@@ -180,4 +181,19 @@ def _try_broadcast_over_websocket(notification: Notification, user_ids: list[int
 
     from app.notifications.ws_manager import broadcast_notification_to_users
 
-    loop.create_task(broadcast_notification_to_users(notification, user_ids))
+    # The task runs after this call returns — typically after the
+    # caller's job has closed its session, when the ORM instance is
+    # detached and its commit-expired attributes can't be reloaded
+    # (DetachedInstanceError). Snapshot the fields now, while bound.
+    snapshot = SimpleNamespace(
+        id=notification.id,
+        factory_id=notification.factory_id,
+        type=notification.type,
+        severity=notification.severity,
+        priority=notification.priority,
+        title=notification.title,
+        message=notification.message,
+        alert_metadata=notification.alert_metadata,
+        created_at=notification.created_at,
+    )
+    loop.create_task(broadcast_notification_to_users(snapshot, user_ids))

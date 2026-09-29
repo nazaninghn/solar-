@@ -26,11 +26,14 @@ def register_all_jobs() -> None:
     from app.jobs.alert_jobs import register_alert_jobs
     from app.jobs.bi_jobs import register_bi_jobs
     from app.jobs.daily_summary_jobs import register_daily_summary_jobs
+    from app.jobs.demo_jobs import register_demo_jobs
     from app.jobs.device_health_jobs import register_device_health_jobs
     from app.jobs.disaster_recovery_jobs import register_disaster_recovery_jobs
     from app.jobs.escalation_jobs import register_escalation_jobs
+    from app.jobs.failure_prediction_jobs import register_failure_prediction_jobs
     from app.jobs.financial_jobs import register_financial_jobs
     from app.jobs.finops_jobs import register_finops_jobs
+    from app.jobs.market_jobs import register_market_jobs
     from app.jobs.observability_jobs import register_observability_jobs
     from app.jobs.performance_jobs import register_performance_jobs
     from app.jobs.pricing_jobs import register_pricing_jobs
@@ -64,6 +67,9 @@ def register_all_jobs() -> None:
     register_ai_readiness_jobs()
     register_disaster_recovery_jobs()
     register_performance_jobs()
+    register_failure_prediction_jobs()
+    register_market_jobs()
+    register_demo_jobs()
 
 
 def start_scheduler() -> None:

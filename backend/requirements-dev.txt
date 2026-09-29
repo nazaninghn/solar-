@@ -5,3 +5,6 @@ ruff>=0.8
 bandit>=1.8
 pip-audit>=2.7
 detect-secrets>=1.5
+# Failure prediction: only OYA-PROJECT retraining needs these; the
+# backend runtime and scripts/export_failure_models.py do not.
+scikit-learn>=1.9
