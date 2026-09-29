@@ -38,8 +38,21 @@ _KNOWN_TELEMETRY_KEYS = {
 _latest_by_factory: dict[int, dict[str, dict]] = defaultdict(dict)
 
 
+# Push-based devices post their own readings to /devices/{id}/telemetry
+# and have no polling adapter — polling them only raised "Unsupported
+# device" every cycle, flipping them to ERROR and inflating
+# consecutive_error_count, which the health score and failure-risk
+# comms indicators then read as a real connectivity fault.
+PUSH_CONNECTION_TYPES = ("API",)
+
+
 def get_active_devices(db) -> list[Device]:
-    return db.scalars(select(Device).where(Device.is_active.is_(True))).all()
+    return db.scalars(
+        select(Device).where(
+            Device.is_active.is_(True),
+            Device.connection_type.notin_(PUSH_CONNECTION_TYPES),
+        )
+    ).all()
 
 
 async def poll_devices() -> None:

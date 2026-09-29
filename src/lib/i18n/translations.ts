@@ -62,7 +62,7 @@ export const translations = {
       items: [
         {
           title: "Forecast Energy",
-          description: "AI-driven predictions for solar generation, electricity consumption, and market prices with 95%+ accuracy.",
+          description: "AI-driven forecasts for solar generation, electricity consumption, and day-ahead market prices (PTF). Price forecasts: mean absolute error of 14.6% of the average price on 12 held-out weeks, 16% below the best naive benchmark.",
         },
         {
           title: "Optimize Battery",
@@ -97,7 +97,7 @@ export const translations = {
       items: [
         {
           title: "AI Forecasting",
-          description: "Machine learning models predict solar generation and electricity consumption up to 72 hours ahead with 95%+ accuracy.",
+          description: "Machine learning models predict solar generation and electricity consumption up to 72 hours ahead. Forecast accuracy is evaluated using historical data.",
         },
         {
           title: "Battery Intelligence",
@@ -233,7 +233,7 @@ export const translations = {
         {
           question: "What accuracy can we expect from the AI forecasting models?",
           answer:
-            "Our solar production forecasts achieve 95%+ accuracy for day-ahead predictions and 92%+ for 72-hour horizons. Electricity consumption forecasts typically reach 97% accuracy within the first 30 days as the model learns your facility's unique patterns. Accuracy improves continuously as more data is collected.",
+            "Forecast accuracy is evaluated using historical data the models did not see during training. For day-ahead electricity prices (PTF), the current model's mean absolute error is 14.6% of the average price over 12 held-out weeks (July–September 2026), 16% lower than the best naive benchmark. Solar generation and consumption accuracy will be published once it has been measured on real facility data.",
         },
         {
           question: "Is our energy data secure and compliant with industrial regulations?",
@@ -449,6 +449,8 @@ export const translations = {
         forecast: "Forecast",
         recommendations: "AI Recommendations",
         battery: "Battery Storage",
+        maintenance: "Predictive Maintenance",
+        market: "Day-Ahead Market",
         billing: "Billing & Savings",
         reports: "Reports",
         settings: "Settings",
@@ -550,7 +552,7 @@ export const translations = {
       items: [
         {
           title: "Enerjiyi Öngörün",
-          description: "Güneş enerjisi üretimi, elektrik tüketimi ve piyasa fiyatları için %95+ doğrulukla yapay zeka destekli tahminler.",
+          description: "Güneş enerjisi üretimi, elektrik tüketimi ve gün öncesi piyasa fiyatları (PTF) için yapay zeka destekli tahminler. Fiyat tahminleri: 12 ayrılmış haftada ortalama fiyatın %14,6'sı kadar ortalama mutlak hata, en iyi basit yöntemden %16 daha düşük.",
         },
         {
           title: "Bataryayı Optimize Edin",
@@ -585,7 +587,7 @@ export const translations = {
       items: [
         {
           title: "Yapay Zeka Öngörüsü",
-          description: "Makine öğrenmesi modelleri, güneş enerjisi üretimini ve elektrik tüketimini 72 saat öncesinden %95+ doğrulukla öngörür.",
+          description: "Makine öğrenmesi modelleri, güneş enerjisi üretimini ve elektrik tüketimini 72 saat öncesinden öngörür. Tahmin doğruluğu geçmiş veriler kullanılarak değerlendirilir.",
         },
         {
           title: "Batarya Zekası",
@@ -721,7 +723,7 @@ export const translations = {
         {
           question: "Yapay zeka öngörü modellerinden ne kadar doğruluk bekleyebiliriz?",
           answer:
-            "Güneş enerjisi üretim tahminlerimiz gün öncesi öngörülerde %95+, 72 saatlik ufuklarda ise %92+ doğruluk sağlar. Elektrik tüketim tahminleri, model tesisinize özgü örüntüleri öğrendikçe ilk 30 gün içinde genellikle %97 doğruluğa ulaşır. Daha fazla veri toplandıkça doğruluk sürekli artar.",
+            "Tahmin doğruluğu, modellerin eğitim sırasında görmediği geçmiş veriler kullanılarak değerlendirilir. Gün öncesi elektrik fiyatlarında (PTF) mevcut modelin ortalama mutlak hatası, 12 ayrılmış haftada (Temmuz–Eylül 2026) ortalama fiyatın %14,6'sıdır; bu, en iyi basit yöntemden %16 daha düşüktür. Güneş üretimi ve tüketim doğruluğu, gerçek tesis verileriyle ölçüldükten sonra yayımlanacaktır.",
         },
         {
           question: "Enerji verilerimiz güvenli ve endüstriyel düzenlemelere uygun mu?",
@@ -937,6 +939,8 @@ export const translations = {
         forecast: "Tahmin",
         recommendations: "Yapay Zeka Önerileri",
         battery: "Batarya Depolama",
+        maintenance: "Kestirimci Bakım",
+        market: "Gün Öncesi Piyasası",
         billing: "Faturalandırma",
         reports: "Raporlar",
         settings: "Ayarlar",

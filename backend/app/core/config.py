@@ -208,5 +208,32 @@ class Settings:
         "https://api.open-meteo.com/v1",
     )
 
+    # EPİAŞ Transparency Platform (Turkish day-ahead market PTF/SMF and
+    # system fundamentals). Every data call needs a TGT ticket obtained
+    # by logging in with a (free) transparency account; empty
+    # credentials mean the market module stays inert rather than
+    # failing at startup.
+    EPIAS_USERNAME: str = os.getenv("EPIAS_USERNAME", "")
+    EPIAS_PASSWORD: str = os.getenv("EPIAS_PASSWORD", "")
+    EPIAS_BASE_URL: str = os.getenv(
+        "EPIAS_BASE_URL", "https://seffaflik.epias.com.tr/electricity-service"
+    )
+    EPIAS_AUTH_URL: str = os.getenv(
+        "EPIAS_AUTH_URL", "https://giris.epias.com.tr/cas/v1/tickets"
+    )
+    # Demo mode: keep appending synthetic telemetry for the demo factory
+    # (scripts/seed_demo_site.py) every 5 minutes, standing in for
+    # devices pushing live. Off by default — never enable alongside
+    # real telemetry for the same factory.
+    DEMO_TELEMETRY_ENABLED: bool = os.getenv("DEMO_TELEMETRY_ENABLED", "false").lower() == "true"
+
+    # Where the trained PTF model is written (by scripts/train_ptf_model.py
+    # or the weekly retrain job). Trained from this deployment's own DB,
+    # so it's data, not code — var/ is gitignored.
+    PTF_MODEL_DIR: str = os.getenv(
+        "PTF_MODEL_DIR",
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "var", "models", "ptf"),
+    )
+
 
 settings = Settings()

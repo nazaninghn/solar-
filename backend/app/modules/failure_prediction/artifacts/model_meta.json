@@ -1,0 +1,263 @@
+{
+  "exported_at": "2026-09-28T22:12:29.173701+00:00",
+  "source": "OYA-PROJECT/src/15_retrain_timeaware.py (PVDAQ system_id=10)",
+  "binary": {
+    "file": "pv_failure_binary.json",
+    "version": "pv-failure-xgb-timeaware-v1",
+    "features": [
+      "ac_current__427",
+      "ac_power__423",
+      "ac_voltage__426",
+      "ambient_temp__428",
+      "das_temp__433",
+      "dc_pos_current__425",
+      "dc_pos_voltage__424",
+      "dc_power__422",
+      "inverter_temp__432",
+      "module_temp_1__429",
+      "module_temp_2__430",
+      "module_temp_3__431",
+      "poa_irradiance__421",
+      "das_battery_voltage__434",
+      "hour",
+      "minute",
+      "month",
+      "day_of_year",
+      "day_of_week",
+      "quarter",
+      "hour_sin",
+      "hour_cos",
+      "doy_sin",
+      "doy_cos",
+      "month_sin",
+      "month_cos",
+      "p_rmean_3",
+      "p_rstd_3",
+      "p_rmin_3",
+      "p_rmax_3",
+      "p_rrange_3",
+      "p_rmean_5",
+      "p_rstd_5",
+      "p_rmin_5",
+      "p_rmax_5",
+      "p_rrange_5",
+      "p_rmean_10",
+      "p_rstd_10",
+      "p_rmin_10",
+      "p_rmax_10",
+      "p_rrange_10",
+      "p_rmean_30",
+      "p_rstd_30",
+      "p_rmin_30",
+      "p_rmax_30",
+      "p_rrange_30",
+      "p_ewm_5",
+      "p_ewm_15",
+      "p_lag_1",
+      "irr_lag_1",
+      "p_lag_3",
+      "irr_lag_3",
+      "p_lag_6",
+      "irr_lag_6",
+      "p_lag_12",
+      "irr_lag_12",
+      "irr_roc",
+      "ac_apparent_power",
+      "dc_apparent_power",
+      "temp_diff",
+      "temp_stress",
+      "power_irr_product"
+    ],
+    "threshold": 0.5579913854598999,
+    "horizon_minutes": 180,
+    "daylight_irradiance_w_m2": 150.0,
+    "label": "daylight fault within (t, t+horizon] on the same day",
+    "test_metrics": {
+      "precision": 0.384138520735357,
+      "recall": 0.4903137789904502,
+      "f1": 0.43078029485796476,
+      "roc_auc": 0.7577259835523584,
+      "average_precision": 0.48913335356752136,
+      "mcc": 0.3199321663336677
+    },
+    "lead_time": {
+      "fault_onsets": 998,
+      "detected": 584,
+      "mean_lead_min": 142.8595890410959
+    }
+  },
+  "fault_type": {
+    "file": "pv_fault_type.json",
+    "version": "pv-fault-type-xgb-daylight-v1",
+    "features": [
+      "ac_current__427",
+      "ac_power__423",
+      "ac_voltage__426",
+      "ambient_temp__428",
+      "das_temp__433",
+      "dc_pos_current__425",
+      "dc_pos_voltage__424",
+      "dc_power__422",
+      "inverter_temp__432",
+      "module_temp_1__429",
+      "module_temp_2__430",
+      "module_temp_3__431",
+      "poa_irradiance__421",
+      "das_battery_voltage__434",
+      "hour",
+      "minute",
+      "month",
+      "day_of_year",
+      "day_of_week",
+      "quarter",
+      "hour_sin",
+      "hour_cos",
+      "doy_sin",
+      "doy_cos",
+      "month_sin",
+      "month_cos",
+      "p_rmean_3",
+      "p_rstd_3",
+      "p_rmin_3",
+      "p_rmax_3",
+      "p_rrange_3",
+      "p_rmean_5",
+      "p_rstd_5",
+      "p_rmin_5",
+      "p_rmax_5",
+      "p_rrange_5",
+      "p_rmean_10",
+      "p_rstd_10",
+      "p_rmin_10",
+      "p_rmax_10",
+      "p_rrange_10",
+      "p_rmean_30",
+      "p_rstd_30",
+      "p_rmin_30",
+      "p_rmax_30",
+      "p_rrange_30",
+      "p_ewm_5",
+      "p_ewm_15",
+      "p_lag_1",
+      "irr_lag_1",
+      "p_lag_3",
+      "irr_lag_3",
+      "p_lag_6",
+      "irr_lag_6",
+      "p_lag_12",
+      "irr_lag_12",
+      "power_roc",
+      "irr_roc",
+      "power_roc2",
+      "power_pct_chg",
+      "perf_ratio",
+      "pr_roll_med_30",
+      "pr_deviation",
+      "ac_dc_ratio",
+      "inverter_loss",
+      "ac_apparent_power",
+      "dc_apparent_power",
+      "temp_diff",
+      "temp_stress",
+      "inv_temp_roll5",
+      "inv_temp_dev",
+      "power_irr_product",
+      "power_irr_ratio_dev"
+    ],
+    "classes": [
+      0,
+      1,
+      2,
+      4,
+      5
+    ],
+    "fault_names": {
+      "0": "Normal",
+      "1": "Sudden Power Drop",
+      "2": "Low PR",
+      "4": "AC/DC Collapse",
+      "5": "Combined Fault"
+    },
+    "test_macro_f1": 0.7430888944452791
+  },
+  "reference": {
+    "ac_power_w": 1056.3,
+    "ac_voltage_v": 122.65,
+    "dc_voltage_v": 217.63,
+    "ac_dc_ratio": 0.8493
+  },
+  "training_medians": {
+    "ac_current__427": 3.4713,
+    "ac_power__423": 379.84,
+    "ac_voltage__426": 122.65,
+    "ambient_temp__428": 16.481,
+    "das_temp__433": 20.508,
+    "dc_pos_current__425": 2.0013,
+    "dc_pos_voltage__424": 217.63,
+    "dc_power__422": 447.24,
+    "inverter_temp__432": 22.667,
+    "module_temp_1__429": 29.4475,
+    "module_temp_2__430": 29.647,
+    "module_temp_3__431": 31.776,
+    "poa_irradiance__421": 448.11,
+    "das_battery_voltage__434": 13.169
+  },
+  "clip_bounds": {
+    "ac_current__427": [
+      0.5545,
+      8.7428
+    ],
+    "ac_power__423": [
+      1.4401,
+      1056.3
+    ],
+    "ac_voltage__426": [
+      118.12,
+      126.7
+    ],
+    "ambient_temp__428": [
+      -8.3053,
+      33.651
+    ],
+    "das_temp__433": [
+      -5.3186,
+      45.232
+    ],
+    "dc_pos_current__425": [
+      0.0328,
+      5.6357
+    ],
+    "dc_pos_voltage__424": [
+      156.41,
+      253.77
+    ],
+    "dc_power__422": [
+      5.5642,
+      1254.2
+    ],
+    "inverter_temp__432": [
+      -4.9282,
+      55.168
+    ],
+    "module_temp_1__429": [
+      -3.5052,
+      57.9563
+    ],
+    "module_temp_2__430": [
+      -6.9401,
+      59.91
+    ],
+    "module_temp_3__431": [
+      -3.7261,
+      64.174
+    ],
+    "poa_irradiance__421": [
+      24.818,
+      1186.9
+    ],
+    "das_battery_voltage__434": [
+      8.9742,
+      13.887
+    ]
+  }
+}

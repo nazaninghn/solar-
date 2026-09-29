@@ -38,11 +38,14 @@ from app.modules.events.router import alert_router as events_alert_router
 from app.integrations.huawei.router import router as huawei_router
 from app.modules.events.router import notif_router as events_notif_router
 from app.modules.factories.router import router as factories_router
+from app.modules.failure_prediction.router import router as failure_prediction_router
 from app.modules.finance.router import router as finance_router
 from app.modules.financial.router import router as financial_router
 from app.modules.finops.router import router as finops_router
 from app.modules.forecast.router import router as forecast_router
 from app.modules.forecasting.router import router as forecasting_router
+from app.modules.market.router import offer_router as sell_offer_router
+from app.modules.market.router import router as market_router
 from app.modules.gateway.router import router as gateway_router
 from app.modules.iot_gateway.router import router as iot_gateway_router
 from app.modules.monitoring.router import router as monitoring_router
@@ -160,6 +163,9 @@ app.include_router(ai_router)
 app.include_router(huawei_router)
 app.include_router(performance_router)
 app.include_router(dr_router)
+app.include_router(failure_prediction_router)
+app.include_router(market_router)
+app.include_router(sell_offer_router)
 
 
 @app.get("/")
