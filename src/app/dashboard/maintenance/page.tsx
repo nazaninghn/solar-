@@ -7,11 +7,11 @@ import {
 } from "recharts";
 import { Wrench, RefreshCw, ChevronDown, ChevronRight, ShieldAlert, Cpu, ClipboardList } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { FACTORY_ID } from "@/lib/factory";
+import { useFactory } from "@/lib/factory/FactoryContext";
 import { maintenanceText } from "@/lib/i18n/maintenance";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
-const BASE = `${API}/api/v1/factories/${FACTORY_ID}/failure-prediction`;
+const fpBase = (factoryId: number) => `${API}/api/v1/factories/${factoryId}/failure-prediction`;
 
 type Indicator = {
   code: string; category: string; label: string; value: number | null;
@@ -58,6 +58,8 @@ function authHeaders(json = false): Record<string, string> {
 export default function MaintenancePage() {
   const { locale } = useLanguage();
   const m = maintenanceText[locale];
+  const { activeId } = useFactory();
+  const BASE = fpBase(activeId);
 
   const [overview, setOverview] = useState<Overview | null>(null);
   const [events, setEvents] = useState<FailureEvent[]>([]);
@@ -74,10 +76,11 @@ export default function MaintenancePage() {
     let cancelled = false;
     async function load() {
       try {
+        const base = fpBase(activeId);
         const [o, e, mi] = await Promise.all([
-          fetch(`${BASE}/overview`, { headers: authHeaders() }),
-          fetch(`${BASE}/events`, { headers: authHeaders() }),
-          fetch(`${BASE}/model`, { headers: authHeaders() }),
+          fetch(`${base}/overview`, { headers: authHeaders() }),
+          fetch(`${base}/events`, { headers: authHeaders() }),
+          fetch(`${base}/model`, { headers: authHeaders() }),
         ]);
         if (!o.ok) throw new Error(`overview ${o.status}`);
         const [overviewData, eventData, modelData] = await Promise.all([
@@ -100,7 +103,7 @@ export default function MaintenancePage() {
     return () => {
       cancelled = true;
     };
-  }, [reloadKey]);
+  }, [reloadKey, activeId]);
 
   async function runAssessment() {
     setRunning(true);
@@ -176,6 +179,7 @@ export default function MaintenancePage() {
                 device={d}
                 open={expanded === d.device_id}
                 onToggle={() => setExpanded(expanded === d.device_id ? null : d.device_id)}
+                factoryId={activeId}
               />
             ))}
           </div>
@@ -191,7 +195,7 @@ export default function MaintenancePage() {
           </div>
           <p className="text-xs text-gray-400 mt-1 mb-4">{m.eventsHint}</p>
           {overview && overview.devices.length > 0 && (
-            <EventForm devices={overview.devices} onCreated={reload} />
+            <EventForm devices={overview.devices} onCreated={reload} factoryId={activeId} />
           )}
           {events.length === 0 ? (
             <p className="text-sm text-gray-400 mt-4">{m.noEvents}</p>
@@ -255,7 +259,7 @@ export default function MaintenancePage() {
   );
 }
 
-function DeviceRow({ device, open, onToggle }: { device: DeviceRisk; open: boolean; onToggle: () => void }) {
+function DeviceRow({ device, open, onToggle, factoryId }: { device: DeviceRisk; open: boolean; onToggle: () => void; factoryId: number }) {
   const { locale } = useLanguage();
   const m = maintenanceText[locale];
   const a = device.assessment;
@@ -305,22 +309,22 @@ function DeviceRow({ device, open, onToggle }: { device: DeviceRisk; open: boole
           </div>
         </div>
       </button>
-      {open && a && <DeviceDetail deviceId={device.device_id} assessment={a} />}
+      {open && a && <DeviceDetail deviceId={device.device_id} assessment={a} factoryId={factoryId} />}
     </div>
   );
 }
 
-function DeviceDetail({ deviceId, assessment }: { deviceId: number; assessment: Assessment }) {
+function DeviceDetail({ deviceId, assessment, factoryId }: { deviceId: number; assessment: Assessment; factoryId: number }) {
   const { locale } = useLanguage();
   const m = maintenanceText[locale];
   const [history, setHistory] = useState<HistoryPoint[]>([]);
 
   useEffect(() => {
-    fetch(`${BASE}/devices/${deviceId}/history?days=7`, { headers: authHeaders() })
+    fetch(`${fpBase(factoryId)}/devices/${deviceId}/history?days=7`, { headers: authHeaders() })
       .then((r) => (r.ok ? r.json() : []))
       .then(setHistory)
       .catch(() => setHistory([]));
-  }, [deviceId]);
+  }, [deviceId, factoryId]);
 
   const chart = history.map((h) => ({
     time: new Date(h.assessed_at).toLocaleString(m.dateLocale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }),
@@ -382,7 +386,7 @@ function DeviceDetail({ deviceId, assessment }: { deviceId: number; assessment: 
   );
 }
 
-function EventForm({ devices, onCreated }: { devices: DeviceRisk[]; onCreated: () => void }) {
+function EventForm({ devices, onCreated, factoryId }: { devices: DeviceRisk[]; onCreated: () => void; factoryId: number }) {
   const { locale } = useLanguage();
   const m = maintenanceText[locale];
   const [deviceId, setDeviceId] = useState(devices[0].device_id);
@@ -397,7 +401,7 @@ function EventForm({ devices, onCreated }: { devices: DeviceRisk[]; onCreated: (
     if (!failureType.trim()) return;
     setSaving(true);
     try {
-      const res = await fetch(`${BASE}/events`, {
+      const res = await fetch(`${fpBase(factoryId)}/events`, {
         method: "POST",
         headers: authHeaders(true),
         body: JSON.stringify({

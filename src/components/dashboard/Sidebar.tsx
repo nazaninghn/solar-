@@ -14,16 +14,20 @@ import {
   Receipt,
   FileText,
   Settings,
+  Rocket,
   ArrowLeft,
   X,
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import { useAuth, initials } from "@/lib/auth/AuthContext";
 
 function SidebarContent({ pathname }: { pathname: string }) {
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   const navItems = [
     { label: t.dashboard.sidebar.dashboard, href: "/dashboard", icon: LayoutDashboard },
+    { label: t.dashboard.sidebar.onboarding, href: "/dashboard/onboarding", icon: Rocket },
     { label: t.dashboard.sidebar.analytics, href: "/dashboard/analytics", icon: BarChart3 },
     { label: t.dashboard.sidebar.forecast, href: "/dashboard/forecast", icon: CloudSun },
     { label: t.dashboard.sidebar.recommendations, href: "/dashboard/recommendations", icon: Sparkles },
@@ -79,11 +83,11 @@ function SidebarContent({ pathname }: { pathname: string }) {
         </Link>
         <div className="mt-2 flex items-center gap-3 px-3.5 py-3 rounded-xl bg-white/5">
           <div className="w-9 h-9 rounded-full bg-lime/20 flex items-center justify-center text-sm font-bold text-lime shrink-0">
-            JD
+            {initials(user?.full_name)}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-white truncate">Jane Doe</p>
-            <p className="text-xs text-white/40 truncate">Acme Industrial GmbH</p>
+            <p className="text-sm font-semibold text-white truncate">{user?.full_name ?? "—"}</p>
+            <p className="text-xs text-white/40 truncate">{user?.organization?.name ?? ""}</p>
           </div>
         </div>
       </div>

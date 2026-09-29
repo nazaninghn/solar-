@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import OnboardingBanner from "@/components/dashboard/OnboardingBanner";
 import AIInsightBanner from "@/components/dashboard/AIInsightBanner";
 import KPIGrid from "@/components/dashboard/KPIGrid";
 import RecommendationCard from "@/components/dashboard/RecommendationCard";
@@ -21,6 +22,8 @@ export default function DashboardPage() {
           {t.dashboard.subtitle}
         </p>
       </div>
+
+      <OnboardingBanner />
 
       <AIInsightBanner />
 

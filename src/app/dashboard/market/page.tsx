@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import { TrendingUp, RefreshCw, Clock, Gavel, Info, FlaskConical } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
-import { FACTORY_ID } from "@/lib/factory";
+import { useFactory } from "@/lib/factory/FactoryContext";
 import { marketText } from "@/lib/i18n/market";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
@@ -61,6 +61,7 @@ const tl = (v: number | null | undefined, digits = 0) =>
 export default function MarketPage() {
   const { locale } = useLanguage();
   const m = marketText[locale];
+  const { activeId } = useFactory();
 
   const [status, setStatus] = useState<Status | null>(null);
   const [forecast, setForecast] = useState<Forecast | null>(null);
@@ -91,7 +92,7 @@ export default function MarketPage() {
           statusData.price_rows > 0
             ? fetch(`${API}/api/v1/market/ptf/forecast?delivery_date=${day}`, { headers: headers() })
             : Promise.resolve(null),
-          fetch(`${API}/api/v1/factories/${FACTORY_ID}/sell-offers?delivery_date=${day}`, { headers: headers() }),
+          fetch(`${API}/api/v1/factories/${activeId}/sell-offers?delivery_date=${day}`, { headers: headers() }),
         ]);
         const forecastData = f && f.ok ? await f.json() : null;
         const offerData = o.ok ? await o.json() : null;
@@ -110,7 +111,7 @@ export default function MarketPage() {
     return () => {
       cancelled = true;
     };
-  }, [reloadKey, m.loadError]);
+  }, [reloadKey, m.loadError, activeId]);
 
   async function sync() {
     setBusy("sync");
@@ -125,7 +126,7 @@ export default function MarketPage() {
   async function generate() {
     if (!status) return;
     setBusy("offer");
-    const res = await fetch(`${API}/api/v1/factories/${FACTORY_ID}/sell-offers`, {
+    const res = await fetch(`${API}/api/v1/factories/${activeId}/sell-offers`, {
       method: "POST", headers: headers(true),
       body: JSON.stringify({ delivery_date: status.next_delivery_date, mode, min_price_try_mwh: minPrice }),
     }).catch(() => null);
@@ -141,7 +142,7 @@ export default function MarketPage() {
   async function markSubmitted() {
     if (!status) return;
     const res = await fetch(
-      `${API}/api/v1/factories/${FACTORY_ID}/sell-offers/mark-submitted?delivery_date=${status.next_delivery_date}`,
+      `${API}/api/v1/factories/${activeId}/sell-offers/mark-submitted?delivery_date=${status.next_delivery_date}`,
       { method: "POST", headers: headers() },
     ).catch(() => null);
     if (res && res.ok) setOffer(await res.json());
