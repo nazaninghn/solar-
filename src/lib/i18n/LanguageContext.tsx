@@ -1,7 +1,10 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { translations, type Locale, type Translations } from "./translations";
+import { translations, type Locale, type Translations as BaseTranslations } from "./translations";
+import { appTranslations, type AppTranslations } from "./app";
+
+export type Translations = BaseTranslations & AppTranslations;
 
 interface LanguageContextValue {
   locale: Locale;
@@ -23,13 +26,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   function setLocale(next: Locale) {
     setLocaleState(next);
     window.localStorage.setItem(STORAGE_KEY, next);
   }
 
   return (
-    <LanguageContext.Provider value={{ locale, setLocale, t: translations[locale] as unknown as Translations }}>
+    <LanguageContext.Provider value={{ locale, setLocale, t: { ...(translations[locale] as unknown as BaseTranslations), ...appTranslations[locale] } }}>
       {children}
     </LanguageContext.Provider>
   );
